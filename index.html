@@ -955,41 +955,38 @@
         <p>Without a CUSIP, we can't look up the actual TRACE trade price. The YTM and spread shown are <em>interpolated</em> from the issuer's verified spread curve (built from bonds that do have CUSIPs and TRACE data).</p>
         <p style="font-size:11px;color:#999">CUSIPs are sourced from Public.com URL slugs and issuer IR pages. If you have the CUSIP for this bond, we can add verified TRACE pricing.</p>
       </div>
-      <div class="expand-panel" id="bondMarketPanel" style="margin-top:24px">
-        <div class="expand-header" onclick="toggleExpand('bondMarketPanel')">
-          <h3>BDC Bond Market <span class="info-btn" data-info="bondMarket" onclick="event.stopPropagation()">&#9432;</span> <span id="bondAsOf" style="font-size:11px;font-weight:400;color:#999"></span></h3>
-          <span class="expand-arrow">&#9654;</span>
+      <div style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:16px;margin-top:24px" id="bondMarketPanel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3 style="font-size:14px;font-weight:600;margin:0">BDC Bond Market <span class="info-btn" data-info="bondMarket">&#9432;</span> <span id="bondAsOf" style="font-size:11px;font-weight:400;color:#999"></span></h3>
         </div>
-        <div class="expand-body" style="display:none">
-          <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
-            <span style="font-size:12px;color:#888;font-weight:500">Chart:</span>
-            <select id="bondXAxis" style="padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px;background:#fff">
-              <option value="leverage">Debt/Equity Leverage</option>
-              <option value="equity_cushion">Equity Cushion (% of Assets)</option>
-              <option value="base_coverage">Asset Coverage: Total Debt</option>
-              <option value="stressed_coverage">Stressed Asset Coverage: Total Debt</option>
-              <option value="total_liab_coverage">Asset Coverage: All Liabilities</option>
-              <option value="stressed_liab_coverage">Stressed Coverage: All Liabilities</option>
-              <option value="unsecured_coverage">Unsecured Bond Coverage (base)</option>
-              <option value="stressed_unsec_coverage">Unsecured Bond Coverage (stressed)</option>
-              <option value="stressed_unsec_recovery">Unsecured Bond Recovery %</option>
-              <option value="unsecured_pct">Unsecured Debt % of Total</option>
-              <option value="loss_pct">Stressed Portfolio Loss %</option>
-            </select>
-            <span style="font-size:12px;color:#888">vs</span>
-            <select id="bondYAxis" style="padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px;background:#fff">
-              <option value="avg_spread">Avg Credit Spread (bps)</option>
-              <option value="avg_yield">Avg Yield (%)</option>
-              <option value="wavg_yield">Wtd Avg Yield (%)</option>
-              <option value="wavg_spread">Wtd Avg Spread (bps)</option>
-            </select>
-          </div>
-          <div class="chart-row" style="grid-template-columns:1fr 1fr">
-            <div class="chart-box"><canvas id="bondScatterChart"></canvas></div>
-            <div class="chart-box"><canvas id="bondBarChart"></canvas></div>
-          </div>
-          <div id="bondTableContainer" style="margin-top:16px"></div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+          <span style="font-size:12px;color:#888;font-weight:500">Chart:</span>
+          <select id="bondXAxis" style="padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px;background:#fff">
+            <option value="leverage">Debt/Equity Leverage</option>
+            <option value="equity_cushion">Equity Cushion (% of Assets)</option>
+            <option value="base_coverage">Asset Coverage: Total Debt</option>
+            <option value="stressed_coverage">Stressed Asset Coverage: Total Debt</option>
+            <option value="total_liab_coverage">Asset Coverage: All Liabilities</option>
+            <option value="stressed_liab_coverage">Stressed Coverage: All Liabilities</option>
+            <option value="unsecured_coverage">Unsecured Bond Coverage (base)</option>
+            <option value="stressed_unsec_coverage">Unsecured Bond Coverage (stressed)</option>
+            <option value="stressed_unsec_recovery">Unsecured Bond Recovery %</option>
+            <option value="unsecured_pct">Unsecured Debt % of Total</option>
+            <option value="loss_pct">Stressed Portfolio Loss %</option>
+          </select>
+          <span style="font-size:12px;color:#888">vs</span>
+          <select id="bondYAxis" style="padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px;background:#fff">
+            <option value="avg_spread">Avg Credit Spread (bps)</option>
+            <option value="avg_yield">Avg Yield (%)</option>
+            <option value="wavg_yield">Wtd Avg Yield (%)</option>
+            <option value="wavg_spread">Wtd Avg Spread (bps)</option>
+          </select>
         </div>
+        <div class="chart-row" style="grid-template-columns:1fr 1fr">
+          <div class="chart-box"><canvas id="bondScatterChart"></canvas></div>
+          <div class="chart-box"><canvas id="bondBarChart"></canvas></div>
+        </div>
+        <div id="bondTableContainer" style="margin-top:16px"></div>
       </div>
     </div>
   </div>
@@ -128669,11 +128666,7 @@ function toggleExpand(id) {
   const panel = document.getElementById(id);
   panel.classList.toggle('open');
   const body = panel.querySelector('.expand-body');
-  body.style.display = panel.classList.contains('open') ? '' : 'none';
-  // Re-render bond charts when panel opens (Chart.js needs visible container for sizing)
-  if (id === 'bondMarketPanel' && panel.classList.contains('open')) {
-    setTimeout(() => { renderBondCharts(); }, 50);
-  }
+  if (body) body.style.display = panel.classList.contains('open') ? '' : 'none';
 }
 
 function updateWaterfall(lossByBDC, encLossByBDC, unencLossByBDC) {
@@ -132112,7 +132105,7 @@ setTimeout(() => {
 (function() {
   const el = document.createElement('div');
   el.style.cssText = 'position:fixed;bottom:8px;right:12px;font-size:10px;color:#999;z-index:1000;pointer-events:none';
-  const deployTs = 'Apr 15, 2026 12:53 PM ';
+  const deployTs = 'Apr 15, 2026 1:08 PM ';
   if (deployTs.startsWith('__')) {
     el.textContent = 'Local dev';
   } else {
