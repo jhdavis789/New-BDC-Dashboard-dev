@@ -641,14 +641,11 @@
       <button class="preset-btn" data-preset="severe">Severe</button>
       <button class="preset-btn" data-preset="equitywipe">Equity Wipe</button>
       <button class="preset-btn" data-preset="jaod">JAOD Extreme</button>
-      <button class="preset-btn" id="copyScenarioBtn" title="Copy current custom scenario to clipboard" style="display:none;background:#3b6e8f;color:#fff;border-color:#3b6e8f;margin-left:auto">Copy Current Scenario</button>
-    </div>
-    <div class="historical-row" id="historicalRow">
-      <span class="row-label">Historical:</span>
       <button class="historical-btn" data-preset="gfc2008">GFC 2008-09</button><span class="info-btn hist-info" data-info="hist-gfc2008">&#9432;</span>
       <button class="historical-btn" data-preset="dotcom2001">Dot-Com 2001-02</button><span class="info-btn hist-info" data-info="hist-dotcom2001">&#9432;</span>
       <button class="historical-btn" data-preset="covid2020">COVID 2020</button><span class="info-btn hist-info" data-info="hist-covid2020">&#9432;</span>
       <button class="historical-btn" data-preset="oil2015">Oil Crisis 2015-16</button><span class="info-btn hist-info" data-info="hist-oil2015">&#9432;</span>
+      <button class="preset-btn" id="copyScenarioBtn" title="Copy current custom scenario to clipboard" style="display:none;background:#3b6e8f;color:#fff;border-color:#3b6e8f;margin-left:auto">Copy Current Scenario</button>
     </div>
     <!-- Historical scenario info popups (shown via showInfoOverlay) -->
     <div class="info-popup" data-popup="hist-gfc2008" style="display:none">
@@ -809,12 +806,6 @@
         <div class="chart-wrap"><canvas id="chartSector"></canvas></div>
       </div>
     </div>
-    <div class="chart-row" style="grid-template-columns:1fr" id="bdcCompSection">
-      <div class="chart-box">
-        <div class="chart-header"><h3>BDC Comparison (Original vs Post-Stress)</h3><div class="unit-toggle" id="toggleBDC"><button class="utog" data-unit="$">$</button><button class="utog active" data-unit="%">%</button></div></div>
-        <div class="chart-wrap" style="height:200px"><canvas id="chartBDC"></canvas></div>
-      </div>
-    </div>
 
     <div class="waterfall-section" id="waterfallSection" style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:24px">
       <h3 style="font-size:14px;font-weight:600;margin-bottom:4px">Capital Structure Waterfall <span class="info-btn" data-info="waterfall">&#9432;</span></h3>
@@ -931,36 +922,62 @@
 
     <!-- BOND MARKET SECTION (ALL tab only) -->
     <div id="bondMarketSection" style="display:none">
-      <h2 class="section-title" style="margin-top:24px">BDC Bond Market <span class="info-btn" data-info="bondMarket">&#9432;</span> <span id="bondAsOf" style="font-size:11px;font-weight:400;color:#999"></span></h2>
       <div class="info-popup" data-popup="bondMarket" style="display:none">
         <p><strong>Actual bond trading data</strong> from FINRA TRACE (via Public.com / TradingView, T+1 close). Prices and yields-to-maturity are real last-trade data, not model estimates.</p>
         <p><strong>Credit spread</strong> = market YTM &minus; maturity-matched treasury rate. Treasury curve interpolated from FRED (2yr/5yr/10yr, fetched live).</p>
+        <p style="margin-top:8px"><strong>X-axis metrics explained:</strong></p>
+        <table style="width:100%;border-collapse:collapse;font-size:11px;margin:4px 0 8px">
+          <tr style="border-bottom:1px solid #eee"><td style="padding:3px 0;color:#555;font-weight:600;white-space:nowrap;vertical-align:top">Debt/Equity Leverage</td><td style="padding:3px 0 3px 8px;color:#777">Total debt / equity. Higher = more levered.</td></tr>
+          <tr style="border-bottom:1px solid #eee"><td style="padding:3px 0;color:#555;font-weight:600;white-space:nowrap;vertical-align:top">Equity Cushion</td><td style="padding:3px 0 3px 8px;color:#777">Equity / total assets. How far assets can fall before any debt is impaired. BDC regulatory min is ~33% (150% asset coverage).</td></tr>
+          <tr style="border-bottom:1px solid #eee"><td style="padding:3px 0;color:#555;font-weight:600;white-space:nowrap;vertical-align:top">Asset Coverage: Total Debt</td><td style="padding:3px 0 3px 8px;color:#777">Total assets / total borrowings. BDC regulatory minimum is 150%. This is the standard 1940 Act coverage test.</td></tr>
+          <tr style="border-bottom:1px solid #eee"><td style="padding:3px 0;color:#555;font-weight:600;white-space:nowrap;vertical-align:top">Coverage: All Liabilities</td><td style="padding:3px 0 3px 8px;color:#777">Total assets / total liabilities (debt + other liabilities like payables, deferred income). Stricter than the debt-only coverage.</td></tr>
+          <tr style="border-bottom:1px solid #eee"><td style="padding:3px 0;color:#555;font-weight:600;white-space:nowrap;vertical-align:top">Unsecured Bond Coverage</td><td style="padding:3px 0 3px 8px;color:#777">(Total assets &minus; secured debt &minus; other liabilities) / unsecured debt. The pool available to unsecured bondholders after senior claims. This is what you care about as an unsecured bondholder.</td></tr>
+          <tr style="border-bottom:1px solid #eee"><td style="padding:3px 0;color:#555;font-weight:600;white-space:nowrap;vertical-align:top">Unsecured Bond Recovery %</td><td style="padding:3px 0 3px 8px;color:#777">Stressed version of unsecured coverage, capped at 100%. The actual cents-on-the-dollar unsecured bondholders would receive in the stress scenario.</td></tr>
+        </table>
         <p>Spreads vary significantly by issuer: FSK (BB+) trades 100-120bps wide of ARCC (BBB). OBDC trades 50-70bps wide of ARCC at similar maturities despite similar ratings.</p>
         <p style="font-size:11px;color:#999"><strong>Data sources:</strong> Bond prices/YTM from FINRA TRACE via Public.com &amp; TradingView. Treasury curve from FRED. CUSIPs from Public.com URL slugs &amp; OBDC IR page.</p>
       </div>
-
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
-        <span style="font-size:12px;color:#888;font-weight:500">Chart:</span>
-        <select id="bondXAxis" style="padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px;background:#fff">
-          <option value="leverage">Debt/Equity Leverage</option>
-          <option value="base_coverage">Base Asset Coverage %</option>
-          <option value="stressed_coverage">Stressed Asset Coverage %</option>
-          <option value="unsecured_pct">Unsecured Debt %</option>
-          <option value="loss_pct">Stressed Portfolio Loss %</option>
-        </select>
-        <span style="font-size:12px;color:#888">vs</span>
-        <select id="bondYAxis" style="padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px;background:#fff">
-          <option value="avg_spread">Avg Credit Spread (bps)</option>
-          <option value="avg_yield">Avg Yield (%)</option>
-          <option value="wavg_yield">Wtd Avg Yield (%)</option>
-          <option value="wavg_spread">Wtd Avg Spread (bps)</option>
-        </select>
+      <div class="info-popup" data-popup="noCusip" style="display:none">
+        <p><strong>No CUSIP available.</strong> This bond was identified from SEC filings (coupon, maturity, outstanding amount) but we don't have a confirmed CUSIP identifier for it.</p>
+        <p>Without a CUSIP, we can't look up the actual TRACE trade price. The YTM and spread shown are <em>interpolated</em> from the issuer's verified spread curve (built from bonds that do have CUSIPs and TRACE data).</p>
+        <p style="font-size:11px;color:#999">CUSIPs are sourced from Public.com URL slugs and issuer IR pages. If you have the CUSIP for this bond, we can add verified TRACE pricing.</p>
       </div>
-      <div class="chart-row" style="grid-template-columns:1fr 1fr">
-        <div class="chart-box"><canvas id="bondScatterChart"></canvas></div>
-        <div class="chart-box"><canvas id="bondBarChart"></canvas></div>
+      <div class="expand-panel" id="bondMarketPanel" style="margin-top:24px">
+        <div class="expand-header" onclick="toggleExpand('bondMarketPanel')">
+          <h3>BDC Bond Market <span class="info-btn" data-info="bondMarket" onclick="event.stopPropagation()">&#9432;</span> <span id="bondAsOf" style="font-size:11px;font-weight:400;color:#999"></span></h3>
+          <span class="expand-arrow">&#9654;</span>
+        </div>
+        <div class="expand-body" style="display:none">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+            <span style="font-size:12px;color:#888;font-weight:500">Chart:</span>
+            <select id="bondXAxis" style="padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px;background:#fff">
+              <option value="leverage">Debt/Equity Leverage</option>
+              <option value="equity_cushion">Equity Cushion (% of Assets)</option>
+              <option value="base_coverage">Asset Coverage: Total Debt</option>
+              <option value="stressed_coverage">Stressed Asset Coverage: Total Debt</option>
+              <option value="total_liab_coverage">Asset Coverage: All Liabilities</option>
+              <option value="stressed_liab_coverage">Stressed Coverage: All Liabilities</option>
+              <option value="unsecured_coverage">Unsecured Bond Coverage (base)</option>
+              <option value="stressed_unsec_coverage">Unsecured Bond Coverage (stressed)</option>
+              <option value="stressed_unsec_recovery">Unsecured Bond Recovery %</option>
+              <option value="unsecured_pct">Unsecured Debt % of Total</option>
+              <option value="loss_pct">Stressed Portfolio Loss %</option>
+            </select>
+            <span style="font-size:12px;color:#888">vs</span>
+            <select id="bondYAxis" style="padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px;background:#fff">
+              <option value="avg_spread">Avg Credit Spread (bps)</option>
+              <option value="avg_yield">Avg Yield (%)</option>
+              <option value="wavg_yield">Wtd Avg Yield (%)</option>
+              <option value="wavg_spread">Wtd Avg Spread (bps)</option>
+            </select>
+          </div>
+          <div class="chart-row" style="grid-template-columns:1fr 1fr">
+            <div class="chart-box"><canvas id="bondScatterChart"></canvas></div>
+            <div class="chart-box"><canvas id="bondBarChart"></canvas></div>
+          </div>
+          <div id="bondTableContainer" style="margin-top:16px"></div>
+        </div>
       </div>
-      <div id="bondTableContainer" style="margin-top:16px"></div>
     </div>
   </div>
 
@@ -30753,10 +30770,10 @@ const DATA = {
           "amount": 221000000
         }
       ],
-      "market_price": 18.83,
+      "market_price": 18.9,
       "market_price_date": "2026-04-15",
-      "market_cap": 13519940000,
-      "price_to_nav": 0.9443
+      "market_cap": 13570200000,
+      "price_to_nav": 0.9478
     },
     "BXSL": {
       "total_assets": 14656463000,
@@ -31263,10 +31280,10 @@ const DATA = {
           "amount": 10000
         }
       ],
-      "market_price": 24.75,
+      "market_price": 24.83,
       "market_price_date": "2026-04-15",
-      "market_cap": 5741234186,
-      "price_to_nav": 0.9194
+      "market_cap": 5759791710,
+      "price_to_nav": 0.9224
     },
     "FSK": {
       "total_assets": 13729000000,
@@ -31898,10 +31915,10 @@ const DATA = {
           "amount": 3000000
         }
       ],
-      "market_price": 11.15,
+      "market_price": 11.19,
       "market_price_date": "2026-04-15",
-      "market_cap": 3122740728,
-      "price_to_nav": 0.5337
+      "market_cap": 3133943385,
+      "price_to_nav": 0.5357
     },
     "GBDC": {
       "total_assets": 8893965000,
@@ -32409,10 +32426,10 @@ const DATA = {
           "amount": 4252000
         }
       ],
-      "market_price": 13.25,
+      "market_price": 13.28,
       "market_price_date": "2026-04-15",
-      "market_cap": 3489848401,
-      "price_to_nav": 0.8929
+      "market_cap": 3497749945,
+      "price_to_nav": 0.8949
     },
     "OBDC": {
       "total_assets": 17186365000,
@@ -32981,10 +32998,10 @@ const DATA = {
           "amount": 9839000
         }
       ],
-      "market_price": 11.57,
+      "market_price": 11.6,
       "market_price_date": "2026-04-15",
-      "market_cap": 5778619133,
-      "price_to_nav": 0.7812
+      "market_cap": 5793602588,
+      "price_to_nav": 0.7833
     }
   },
   "liquidity": {
@@ -121170,6 +121187,296 @@ const DATA = {
         }
       ]
     }
+  },
+  "bond_market": {
+    "ratings": {
+      "ARCC": "BBB",
+      "BXSL": "BBB-",
+      "FSK": "BB+",
+      "GBDC": "BBB-",
+      "OBDC": "BBB-"
+    },
+    "as_of": "2026-04-11",
+    "source": "Public.com / TradingView (FINRA TRACE T+1)",
+    "trading": {
+      "ARCC": [
+        {
+          "coupon": 2.15,
+          "maturity": "2026-07-15",
+          "price": 99.28,
+          "ytm": 5.04,
+          "amount": 1000000000,
+          "cusip": "04010LBA0"
+        },
+        {
+          "coupon": 7.0,
+          "maturity": "2027-01-15",
+          "price": 101.16,
+          "ytm": 5.11,
+          "amount": 900000000,
+          "cusip": "04010LBE2"
+        },
+        {
+          "coupon": 2.875,
+          "maturity": "2027-06-15",
+          "price": 97.66,
+          "ytm": 4.94,
+          "amount": 500000000,
+          "cusip": "04010LBD4"
+        },
+        {
+          "coupon": 2.875,
+          "maturity": "2028-06-15",
+          "price": 95.1,
+          "ytm": 5.23,
+          "amount": 1250000000,
+          "cusip": "04010LBB8"
+        },
+        {
+          "coupon": 5.875,
+          "maturity": "2029-03-01",
+          "price": 100.59,
+          "ytm": 5.52,
+          "amount": 1000000000,
+          "cusip": "04010LBF9"
+        },
+        {
+          "coupon": 5.95,
+          "maturity": "2029-07-15",
+          "price": 100.89,
+          "ytm": 5.64,
+          "amount": 850000000,
+          "cusip": "04010LBG7"
+        },
+        {
+          "coupon": 5.5,
+          "maturity": "2030-09-01",
+          "price": 98.96,
+          "ytm": null,
+          "amount": 750000000
+        },
+        {
+          "coupon": 5.1,
+          "maturity": "2031-01-15",
+          "price": 97.04,
+          "ytm": null,
+          "amount": 650000000
+        },
+        {
+          "coupon": 3.2,
+          "maturity": "2031-11-15",
+          "price": 87.54,
+          "ytm": 5.85,
+          "amount": 700000000,
+          "cusip": "04010LBC6"
+        },
+        {
+          "coupon": 5.8,
+          "maturity": "2032-03-08",
+          "price": 99.29,
+          "ytm": 5.96,
+          "amount": 1000000000,
+          "cusip": "04010LBH5"
+        }
+      ],
+      "BXSL": [
+        {
+          "coupon": 2.75,
+          "maturity": "2026-09-16",
+          "price": 99.21,
+          "ytm": 4.57,
+          "amount": 699200000,
+          "cusip": "09261XAE2"
+        },
+        {
+          "coupon": 2.125,
+          "maturity": "2027-02-15",
+          "price": 97.14,
+          "ytm": null,
+          "amount": 619340000
+        },
+        {
+          "coupon": 5.875,
+          "maturity": "2027-11-15",
+          "price": 100.79,
+          "ytm": 5.32,
+          "amount": 400000000,
+          "cusip": "09261XAH5"
+        },
+        {
+          "coupon": 5.35,
+          "maturity": "2028-04-13",
+          "price": 99.72,
+          "ytm": 5.5,
+          "amount": 700000000,
+          "cusip": "09261XAJ1"
+        },
+        {
+          "coupon": 2.85,
+          "maturity": "2028-09-30",
+          "price": 93.87,
+          "ytm": 5.51,
+          "amount": 640000000,
+          "cusip": "09261XAG7"
+        },
+        {
+          "coupon": 5.25,
+          "maturity": "2029-09-04",
+          "price": 99.25,
+          "ytm": 5.48,
+          "amount": 400000000,
+          "cusip": "09261XAK8"
+        },
+        {
+          "coupon": 5.3,
+          "maturity": "2030-06-30",
+          "price": 97.41,
+          "ytm": null,
+          "amount": 500000000
+        },
+        {
+          "coupon": 5.125,
+          "maturity": "2031-01-31",
+          "price": 96.21,
+          "ytm": null,
+          "amount": 500000000
+        }
+      ],
+      "FSK": [
+        {
+          "coupon": 2.625,
+          "maturity": "2027-01-15",
+          "price": 97.12,
+          "ytm": 6.59,
+          "amount": 400000000,
+          "cusip": "302635AH0"
+        },
+        {
+          "coupon": 3.25,
+          "maturity": "2027-07-15",
+          "price": 96.65,
+          "ytm": 6.07,
+          "amount": 500000000,
+          "cusip": "302635AL1"
+        },
+        {
+          "coupon": 3.125,
+          "maturity": "2028-10-12",
+          "price": 92.66,
+          "ytm": 6.36,
+          "amount": 750000000,
+          "cusip": "302635AK3"
+        },
+        {
+          "coupon": 7.875,
+          "maturity": "2029-01-15",
+          "price": 102.57,
+          "ytm": 6.8,
+          "amount": 400000000,
+          "cusip": "302635AM9"
+        },
+        {
+          "coupon": 6.875,
+          "maturity": "2029-08-15",
+          "price": 99.9,
+          "ytm": 6.91,
+          "amount": 600000000,
+          "cusip": "302635AN7"
+        },
+        {
+          "coupon": 6.125,
+          "maturity": "2030-01-15",
+          "price": 97.31,
+          "ytm": 6.94,
+          "amount": 700000000,
+          "cusip": "302635AP2"
+        },
+        {
+          "coupon": 6.125,
+          "maturity": "2031-01-15",
+          "price": 96.43,
+          "ytm": 7.02,
+          "amount": 400000000,
+          "cusip": "302635AQ0"
+        }
+      ],
+      "GBDC": [
+        {
+          "coupon": 2.5,
+          "maturity": "2026-08-24",
+          "price": 98.82,
+          "ytm": 5.72,
+          "amount": 600000000,
+          "cusip": "38173MAB8"
+        },
+        {
+          "coupon": 2.05,
+          "maturity": "2027-02-15",
+          "price": 97.05,
+          "ytm": 5.7,
+          "amount": 350000000,
+          "cusip": "38173MAC6"
+        },
+        {
+          "coupon": 7.05,
+          "maturity": "2028-12-05",
+          "price": 102.84,
+          "ytm": 5.84,
+          "amount": 700000000,
+          "cusip": "38173MAD4"
+        },
+        {
+          "coupon": 6.0,
+          "maturity": "2029-07-15",
+          "price": 100.06,
+          "ytm": 5.97,
+          "amount": 750000000,
+          "cusip": "38173MAE2"
+        }
+      ],
+      "OBDC": [
+        {
+          "coupon": 3.4,
+          "maturity": "2026-07-15",
+          "price": 99.47,
+          "ytm": 5.51,
+          "amount": 1000000000,
+          "cusip": "69121KAE4"
+        },
+        {
+          "coupon": 2.625,
+          "maturity": "2027-01-15",
+          "price": 97.81,
+          "ytm": 5.62,
+          "amount": 500000000,
+          "cusip": "69121KAF1"
+        },
+        {
+          "coupon": 2.875,
+          "maturity": "2028-06-11",
+          "price": 93.06,
+          "ytm": 6.36,
+          "amount": 850000000,
+          "cusip": "69121KAG9"
+        },
+        {
+          "coupon": 5.95,
+          "maturity": "2029-03-15",
+          "price": 99.28,
+          "ytm": 6.23,
+          "amount": 1000000000,
+          "cusip": "69121KAH7"
+        },
+        {
+          "coupon": 6.2,
+          "maturity": "2030-07-15",
+          "price": 99.59,
+          "ytm": 6.31,
+          "amount": 500000000,
+          "cusip": "69121KAJ3"
+        }
+      ]
+    }
   }
 };
 
@@ -121893,13 +122200,8 @@ function recalculate() {
   lastCalcResult = c;
   updateEquityCards(c);
 
-  // Single-BDC: hide BDC comparison chart, show waterfall inline
-  const isSingle = selectedBDC !== 'ALL';
-  document.getElementById('bdcCompSection').style.display = isSingle ? 'none' : '';
-
   updateSeniorityChart(c.lossBySeniority, c.fvBySeniority);
   updateSectorChart(c.lossBySector, c.fvBySector);
-  updateBDCChart(c.fvByBDC, c.lossByBDC);
   updateWaterfall(c.lossByBDC, c.encLossByBDC, c.unencLossByBDC);
   updateStacks();
   renderHoldingsTable();
@@ -121908,18 +122210,14 @@ function recalculate() {
 // ======== CHARTS ========
 let seniorityChart = null;
 let sectorChart = null;
-let bdcChart = null;
 let seniorityUnit = '%';  // '$' or '%'
 let sectorUnit = '%';     // '$' or '%'
-let bdcUnit = '%';        // '$' or '%'
 
 // Cache last computed data for chart redraws on unit toggle
 let _lastLossBySeniority = {};
 let _lastFvBySeniority = {};
 let _lastLossBySector = {};
 let _lastFvBySector = {};
-let _lastFvByBDC = {};
-let _lastLossByBDC = {};
 
 function updateSeniorityChart(lossBySeniority, fvBySeniority) {
   _lastLossBySeniority = lossBySeniority;
@@ -122081,96 +122379,6 @@ function updateSectorChart(lossBySector, fvBySector) {
   }
 }
 
-function updateBDCChart(fvByBDC, lossByBDC) {
-  _lastFvByBDC = fvByBDC;
-  _lastLossByBDC = lossByBDC;
-  const canvas = document.getElementById('chartBDC');
-  const tickers = selectedBDC === 'ALL' ? DATA.tickers : [selectedBDC];
-  const colors = tickers.map(t => BDC_COLORS[t] || '#999');
-  const isPct = bdcUnit === '%';
-
-  let datasets, xTickFmt, tooltipFmt, xMax;
-  if (isPct) {
-    const postData = tickers.map(t => {
-      const fv = fvByBDC[t] || 1;
-      return ((fv - (lossByBDC[t] || 0)) / fv) * 100;
-    });
-    datasets = [
-      {
-        label: 'Post-Stress % of Original FV',
-        data: postData,
-        backgroundColor: colors.map(c => c + 'cc'),
-        borderColor: colors,
-        borderWidth: 1
-      }
-    ];
-    xMax = 100;
-    xTickFmt = v => v + '%';
-    tooltipFmt = ctx => {
-      const t = tickers[ctx.dataIndex];
-      const fv = fvByBDC[t] || 0;
-      const loss = lossByBDC[t] || 0;
-      return 'Post-Stress: ' + fmtDollar(fv - loss) + ' (' + ctx.parsed.x.toFixed(1) + '%)';
-    };
-  } else {
-    const origData = tickers.map(t => (fvByBDC[t] || 0) / 1e6);
-    const postData = tickers.map(t => ((fvByBDC[t] || 0) - (lossByBDC[t] || 0)) / 1e6);
-    datasets = [
-      {
-        label: 'Original FV ($M)',
-        data: origData,
-        backgroundColor: colors.map(c => c + '66'),
-        borderColor: colors,
-        borderWidth: 1
-      },
-      {
-        label: 'Post-Stress FV ($M)',
-        data: postData,
-        backgroundColor: colors.map(c => c + 'cc'),
-        borderColor: colors,
-        borderWidth: 1
-      }
-    ];
-    xMax = undefined;
-    xTickFmt = v => '$' + v.toLocaleString() + 'M';
-    tooltipFmt = ctx => ctx.dataset.label + ': $' + ctx.parsed.x.toFixed(0) + 'M';
-  }
-
-  const config = {
-    type: 'bar',
-    data: {
-      labels: tickers,
-      datasets: datasets
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      plugins: {
-        legend: { position: 'top', labels: { color: '#555', font: { size: 11 } } },
-        tooltip: { callbacks: { label: tooltipFmt } }
-      },
-      scales: {
-        x: {
-          max: xMax,
-          ticks: { color: '#666', callback: xTickFmt },
-          grid: { color: '#eee' }
-        },
-        y: { ticks: { color: '#555', font: { size: 12 } }, grid: { display: false } }
-      }
-    }
-  };
-
-  if (bdcChart) {
-    bdcChart.data = config.data;
-    bdcChart.options = config.options;
-    bdcChart.update('none');
-  } else {
-    bdcChart = new Chart(canvas, config);
-  }
-}
-
 // ======== HEATMAP TABLE ========
 function updateHeatmap(fvBySeniority) {
   const container = document.getElementById('heatmapContainer');
@@ -122268,6 +122476,10 @@ function toggleExpand(id) {
   panel.classList.toggle('open');
   const body = panel.querySelector('.expand-body');
   body.style.display = panel.classList.contains('open') ? '' : 'none';
+  // Re-render bond charts when panel opens (Chart.js needs visible container for sizing)
+  if (id === 'bondMarketPanel' && panel.classList.contains('open')) {
+    setTimeout(() => { renderBondCharts(); }, 50);
+  }
 }
 
 function updateWaterfall(lossByBDC, encLossByBDC, unencLossByBDC) {
@@ -123363,18 +123575,13 @@ document.getElementById('viewTabs').addEventListener('click', e => {
 });
 
 document.getElementById('presetRow').addEventListener('click', e => {
-  if (!e.target.dataset.preset) return;
-  applyPreset(e.target.dataset.preset);
+  const btn = e.target.closest('[data-preset]');
+  if (!btn || !btn.dataset.preset) return;
+  applyPreset(btn.dataset.preset);
 });
 document.getElementById('liqPresetRow').addEventListener('click', e => {
   if (!e.target.dataset.preset) return;
   applyPreset(e.target.dataset.preset);
-});
-// Historical scenario buttons (both tabs) — use closest() to handle clicks on child elements (cite-dot, tooltip text)
-document.getElementById('historicalRow').addEventListener('click', e => {
-  const btn = e.target.closest('.historical-btn');
-  if (!btn || !btn.dataset.preset) return;
-  applyPreset(btn.dataset.preset);
 });
 document.getElementById('liqHistoricalRow').addEventListener('click', e => {
   const btn = e.target.closest('.historical-btn');
@@ -123396,14 +123603,6 @@ document.getElementById('toggleSector').addEventListener('click', e => {
   document.querySelectorAll('#toggleSector .utog').forEach(b => b.classList.toggle('active', b.dataset.unit === sectorUnit));
   if (sectorChart) { sectorChart.destroy(); sectorChart = null; }
   updateSectorChart(_lastLossBySector, _lastFvBySector);
-});
-
-document.getElementById('toggleBDC').addEventListener('click', e => {
-  if (!e.target.dataset.unit) return;
-  bdcUnit = e.target.dataset.unit;
-  document.querySelectorAll('#toggleBDC .utog').forEach(b => b.classList.toggle('active', b.dataset.unit === bdcUnit));
-  if (bdcChart) { bdcChart.destroy(); bdcChart = null; }
-  updateBDCChart(_lastFvByBDC, _lastLossByBDC);
 });
 
 document.getElementById('toggleCashOther').addEventListener('click', e => {
@@ -123789,7 +123988,6 @@ function refreshAll() {
     // Destroy and recreate charts when switching BDCs so labels update
     if (seniorityChart) { seniorityChart.destroy(); seniorityChart = null; }
     if (sectorChart) { sectorChart.destroy(); sectorChart = null; }
-    if (bdcChart) { bdcChart.destroy(); bdcChart = null; }
     recalculate();
     renderBondMarket();
   } else if (selectedView === 'liquidity') {
@@ -125204,22 +125402,44 @@ function computeBondMetrics() {
     const wavgPrice = bonds.reduce((s, b) => s + b.marketPrice * b.amount, 0) / totalAmt;
 
     // Fundamental metrics
-    const leverage = cap.total_debt > 0 && cap.equity > 0 ? cap.total_debt / cap.equity : 0;
-    const baseCoverage = cap.total_debt > 0 ? (cap.total_assets / cap.total_debt) * 100 : 0;
-    const unsecuredPct = cap.total_debt > 0 ? (cap.unsecured_debt / cap.total_debt) * 100 : 0;
+    const totalDebt = cap.total_debt || (cap.secured_debt + cap.unsecured_debt);
+    const totalLiab = cap.total_liabilities || (totalDebt + cap.other_liabilities);
+    const leverage = totalDebt > 0 && cap.equity > 0 ? totalDebt / cap.equity : 0;
+    // Asset coverage: total assets / total debt (BDC regulatory test is 150% min)
+    const baseCoverage = totalDebt > 0 ? (cap.total_assets / totalDebt) * 100 : 0;
+    // Total liabilities coverage: total assets / all liabilities (debt + other)
+    const totalLiabCoverage = totalLiab > 0 ? (cap.total_assets / totalLiab) * 100 : 0;
+    const unsecuredPct = totalDebt > 0 ? (cap.unsecured_debt / totalDebt) * 100 : 0;
+    // Equity cushion: equity / total assets (how far assets can fall before debt impairment)
+    const equityCushion = cap.total_assets > 0 ? (cap.equity / cap.total_assets) * 100 : 0;
+    // Unsecured bondholder coverage: (total assets - secured debt - other liab) / unsecured debt
+    const poolForUnsecured = Math.max(0, cap.total_assets - cap.secured_debt - cap.other_liabilities);
+    const unsecuredCoverage = cap.unsecured_debt > 0 ? (poolForUnsecured / cap.unsecured_debt) * 100 : 0;
+
     let stressedCoverage = baseCoverage;
+    let stressedLiabCoverage = totalLiabCoverage;
+    let stressedUnsecuredCoverage = unsecuredCoverage;
+    let stressedUnsecuredRecovery = 100;
     let lossPct = 0;
     if (_computed && _computed.lossByBDC[t] != null) {
       const loss = _computed.lossByBDC[t];
       const postAssets = cap.total_assets - loss;
-      stressedCoverage = cap.total_debt > 0 ? (postAssets / cap.total_debt) * 100 : 0;
+      stressedCoverage = totalDebt > 0 ? (postAssets / totalDebt) * 100 : 0;
+      stressedLiabCoverage = totalLiab > 0 ? (postAssets / totalLiab) * 100 : 0;
       lossPct = cap.total_investments > 0 ? (loss / cap.total_investments) * 100 : 0;
+      // Stressed unsecured bond coverage: waterfall (secured first, then unsecured)
+      const postPoolForUnsecured = Math.max(0, postAssets - cap.secured_debt - cap.other_liabilities);
+      stressedUnsecuredCoverage = cap.unsecured_debt > 0 ? (postPoolForUnsecured / cap.unsecured_debt) * 100 : 0;
+      // Actual recovery: capped at 100%
+      stressedUnsecuredRecovery = Math.min(100, stressedUnsecuredCoverage);
     }
 
     metrics[t] = {
       bonds, rating, isHY,
       totalAmt, avgYield, wavgYield, avgSpread, wavgSpread, wavgMat, wavgPrice,
       leverage, baseCoverage, stressedCoverage, unsecuredPct, lossPct,
+      totalLiabCoverage, stressedLiabCoverage, equityCushion,
+      unsecuredCoverage, stressedUnsecuredCoverage, stressedUnsecuredRecovery,
     };
   }
   _bondMetrics = metrics;
@@ -125250,8 +125470,14 @@ function renderBondCharts() {
 
   const xMap = {
     leverage: { label: 'Debt/Equity Leverage', fn: m => m.leverage, fmt: v => v.toFixed(2) + 'x' },
-    base_coverage: { label: 'Base Asset Coverage %', fn: m => m.baseCoverage, fmt: v => v.toFixed(0) + '%' },
-    stressed_coverage: { label: 'Stressed Asset Coverage %', fn: m => m.stressedCoverage, fmt: v => v.toFixed(0) + '%' },
+    equity_cushion: { label: 'Equity Cushion (% of Assets)', fn: m => m.equityCushion, fmt: v => v.toFixed(1) + '%' },
+    base_coverage: { label: 'Asset Coverage: Total Debt', fn: m => m.baseCoverage, fmt: v => v.toFixed(0) + '%' },
+    stressed_coverage: { label: 'Stressed Asset Coverage: Total Debt', fn: m => m.stressedCoverage, fmt: v => v.toFixed(0) + '%' },
+    total_liab_coverage: { label: 'Asset Coverage: All Liabilities', fn: m => m.totalLiabCoverage, fmt: v => v.toFixed(0) + '%' },
+    stressed_liab_coverage: { label: 'Stressed Coverage: All Liabilities', fn: m => m.stressedLiabCoverage, fmt: v => v.toFixed(0) + '%' },
+    unsecured_coverage: { label: 'Unsecured Bond Coverage (base)', fn: m => m.unsecuredCoverage, fmt: v => v.toFixed(0) + '%' },
+    stressed_unsec_coverage: { label: 'Unsecured Bond Coverage (stressed)', fn: m => m.stressedUnsecuredCoverage, fmt: v => v.toFixed(0) + '%' },
+    stressed_unsec_recovery: { label: 'Unsecured Bond Recovery %', fn: m => m.stressedUnsecuredRecovery, fmt: v => v.toFixed(0) + '%' },
     unsecured_pct: { label: 'Unsecured Debt % of Total', fn: m => m.unsecuredPct, fmt: v => v.toFixed(0) + '%' },
     loss_pct: { label: 'Stressed Portfolio Loss %', fn: m => m.lossPct, fmt: v => v.toFixed(1) + '%' },
   };
@@ -125420,7 +125646,7 @@ function renderBondTable() {
         ? `<td rowspan="${m.bonds.length + 1}"><span class="badge" style="background:${BDC_COLORS[t] || '#999'}">${t}</span></td><td rowspan="${m.bonds.length + 1}" style="color:${ratingColor};font-weight:600">${m.rating}</td>`
         : '';
       const intpMark = b.interpolated ? ' title="Interpolated from spread curve (no CUSIP)" style="font-style:italic;color:#b5a16a"' : '';
-      html += `<td style="font-family:monospace;font-size:11px;color:#888">${b.cusip || '<span style="color:#ccc">--</span>'}</td>`;
+      html += `<td style="font-family:monospace;font-size:11px;color:#888">${b.cusip || '<span style="color:#ccc">--</span> <span class="info-btn" data-info="noCusip" style="font-family:-apple-system,sans-serif;cursor:pointer">&#9432;</span>'}</td>`;
       html += `<td class="right">$${(b.amount / 1e6).toFixed(0)}M</td>`;
       html += `<td class="right">${b.coupon.toFixed(3)}%</td>`;
       html += `<td class="right" style="font-size:11px">${b.maturity}</td>`;
@@ -125486,7 +125712,7 @@ setTimeout(() => {
 (function() {
   const el = document.createElement('div');
   el.style.cssText = 'position:fixed;bottom:8px;right:12px;font-size:10px;color:#999;z-index:1000;pointer-events:none';
-  const deployTs = 'Apr 15, 2026 9:11 AM ';
+  const deployTs = 'Apr 15, 2026 10:11 AM ';
   if (deployTs.startsWith('__')) {
     el.textContent = 'Local dev';
   } else {
