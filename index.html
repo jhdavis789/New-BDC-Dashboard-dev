@@ -134532,7 +134532,7 @@ function renderLiquidityProjection(ticker) {
               const yr = items[0].label;
               const stack = items[0].dataset.stack;
               if (items[0].dataset.type === 'line') return yr + ' — ' + items[0].dataset.label;
-              return yr + ' — ' + (stack === 'inflows' ? 'Assets / Inflows' : 'Liabilities / Outflows');
+              return yr + ' — ' + (stack === 'inflows' ? 'Cumulative Inflows' : 'Cumulative Outflows');
             },
             label: ctx => {
               const val = ctx.parsed.y;
