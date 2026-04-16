@@ -134077,62 +134077,113 @@ function renderCoverageChart(tickers, liqResults) {
   });
 }
 
-function showLiqAudit(ticker) {
+function buildLiqDetail(ticker, column) {
   const liq = DATA.liquidity[ticker];
-  if (!liq) return;
-  const rc = DATA.rates_curve || {};
-  const row = (label, val, color) => '<tr style="border-bottom:1px solid #eee"><td style="padding:5px 10px;color:#666">' + label + '</td><td style="padding:5px 10px;text-align:right;font-weight:600;color:' + (color || '#333') + '">' + fmtDollar(val) + '</td></tr>';
-  const hdr = (text) => '<tr><td colspan="2" style="padding:10px 10px 4px;font-weight:700;color:#555;border-bottom:2px solid #ddd">' + text + '</td></tr>';
-  let html = '<table style="width:100%;border-collapse:collapse;font-size:13px">';
+  if (!liq) return '';
+  const drow = (label, val, op, color) => {
+    const sign = op === '-' ? '−' : op === '+' ? '+' : '';
+    const c = color || (op === '-' ? '#c0392b' : '#555');
+    return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #f0f0ec"><span style="color:#777">' + sign + ' ' + label + '</span><span style="color:' + c + ';font-weight:500">' + fmtDollar(val) + '</span></div>';
+  };
+  const total = (label, val, color) => '<div style="display:flex;justify-content:space-between;padding:5px 0;border-top:2px solid #ccc;font-weight:700"><span style="color:#333">' + label + '</span><span style="color:' + (color || '#333') + '">' + fmtDollar(val) + '</span></div>';
 
-  // Cash breakdown
-  html += hdr('Cash (XBRL-verified)');
-  html += row('Unrestricted cash & equivalents', liq.cash);
-  html += row('Restricted cash', liq.restricted_cash, '#999');
-  html += row('Total cash', liq.cash + liq.restricted_cash);
-
-  // Credit facilities
-  html += hdr('Credit Facilities');
-  let totalUndrawn = 0;
-  for (const inst of liq.debt_instruments) {
-    if (inst.type !== 'revolving_credit' && inst.type !== 'secured_credit_facility') continue;
-    const u = inst.undrawn || 0;
-    totalUndrawn += u;
-    const note = inst.note ? ' *' : '';
-    html += '<tr style="border-bottom:1px solid #eee"><td style="padding:5px 10px;color:#666">' + inst.name + note + '</td>';
-    html += '<td style="padding:5px 10px;text-align:right;font-size:11px;color:#555">';
-    html += '<span style="color:#333;font-weight:600">' + fmtDollar(u) + '</span> avail';
-    if (inst.outstanding) html += ' / ' + fmtDollar(inst.outstanding) + ' drawn';
-    html += '</td></tr>';
+  if (column === 'cash') {
+    let h = '';
+    // Show XBRL detail fields if available
+    const a = liq;
+    const xKeys = Object.keys(DATA.liquidity[ticker] || {});
+    // We have cash (unrestricted) and restricted_cash in the liquidity data
+    // For the XBRL breakdown, check the balance sheet
+    const bs = DATA.portfolios[ticker] || {};
+    h += drow('Unrestricted cash & equivalents', liq.cash, '+');
+    if (liq.restricted_cash > 0) h += drow('Restricted cash (not available)', liq.restricted_cash, '', '#999');
+    h += total('Available cash', liq.cash);
+    return h;
   }
-  html += row('Total undrawn capacity', totalUndrawn, '#2c6fbb');
 
-  // Unfunded commitments
-  html += hdr('Unfunded Commitments (to portfolio cos.)');
-  for (const d of (liq.unfunded_detail || [])) {
-    html += row(d.section, d.amount);
+  if (column === 'revolver') {
+    let h = '', sum = 0;
+    for (const inst of liq.debt_instruments) {
+      if (inst.type !== 'revolving_credit' && inst.type !== 'secured_credit_facility') continue;
+      const u = inst.undrawn || 0;
+      sum += u;
+      const detail = inst.total_commitment
+        ? ' (' + fmtDollar(inst.total_commitment) + ' commit. − ' + fmtDollar(inst.outstanding) + ' drawn)'
+        : '';
+      h += drow(inst.name + detail, u, '+');
+    }
+    h += total('Total undrawn capacity', sum, '#2c6fbb');
+    return h;
   }
-  html += row('Total unfunded', liq.unfunded_total, '#c0392b');
 
-  // Near-term maturities
-  html += hdr('Near-Term Debt Maturities (\u22642yr)');
-  for (const inst of liq.debt_instruments) {
-    if (inst.type === 'clo' || inst.type === 'revolving_credit' || inst.type === 'secured_credit_facility') continue;
-    if (!inst.maturity_year || inst.maturity_year > 2027) continue;
-    html += row(inst.name + ' (' + (inst.maturity_date || inst.maturity_year) + ')', inst.outstanding);
+  if (column === 'unfunded') {
+    let h = '';
+    for (const d of (liq.unfunded_detail || [])) {
+      h += drow(d.section, d.amount, '+');
+    }
+    h += total('Total unfunded commitments', liq.unfunded_total);
+    return h;
   }
-  html += row('Total near-term maturities', liq.near_term_maturities_2yr, '#c0392b');
 
-  // Source
-  html += '<tr><td colspan="2" style="padding:10px 10px 4px;font-size:10px;color:#aaa">Source: SEC EDGAR XBRL (cash), 10-K/10-Q filings (facilities, commitments). SOFR ' + (rc.sofr || '?') + '% as of ' + (rc.sofr_date || '?') + '.</td></tr>';
-  html += '</table>';
-  showLiqModal(ticker + ' — Liquidity Audit', html);
+  if (column === 'maturities') {
+    let h = '';
+    for (const inst of liq.debt_instruments) {
+      if (inst.type === 'clo' || inst.type === 'revolving_credit' || inst.type === 'secured_credit_facility') continue;
+      if (!inst.maturity_year || inst.maturity_year > 2027) continue;
+      const matLabel = inst.maturity_date || String(inst.maturity_year);
+      h += drow(inst.name + ' (due ' + matLabel + ')', inst.outstanding, '+');
+    }
+    h += total('Total near-term maturities', liq.near_term_maturities_2yr);
+    return h;
+  }
+  return '';
+}
+
+let _openDetail = null; // track which detail row is open: {ticker, column}
+
+function toggleLiqDetail(ticker, column, numCols) {
+  const table = document.getElementById('liqWaterfallTable').querySelector('table');
+  if (!table) return;
+  const detailId = 'liq-detail-' + ticker + '-' + column;
+  const existing = document.getElementById(detailId);
+
+  // Close any open detail
+  const prev = table.querySelector('.liq-detail-row');
+  if (prev) prev.remove();
+
+  // If clicking same cell, just close
+  if (existing) { _openDetail = null; return; }
+
+  // Build detail content
+  const content = buildLiqDetail(ticker, column);
+  if (!content) return;
+
+  // Find the row for this ticker and insert after it
+  const rows = table.querySelectorAll('tbody tr');
+  let targetRow = null;
+  for (const row of rows) {
+    if (row.cells[0] && row.cells[0].textContent.trim() === ticker) { targetRow = row; break; }
+  }
+  if (!targetRow) return;
+
+  const detailRow = document.createElement('tr');
+  detailRow.id = detailId;
+  detailRow.className = 'liq-detail-row';
+  const detailCell = document.createElement('td');
+  detailCell.colSpan = numCols;
+  detailCell.style.cssText = 'padding:8px 16px 12px;background:#f9f9f7;border:1px solid #ddd;border-top:none';
+  detailCell.innerHTML = '<div style="max-width:500px;font-size:12px">' + content + '</div>';
+  detailRow.appendChild(detailCell);
+  targetRow.after(detailRow);
+  _openDetail = { ticker, column };
 }
 
 function renderLiqWaterfall(tickers, liqResults) {
   const container = document.getElementById('liqWaterfallTable');
   if (!container) return;
   const td = 'padding:8px 10px;border:1px solid #ddd;text-align:right;color:#333';
+  const click = 'cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px';
+  const NC = 7; // number of columns
   let html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#f0f0ec">';
   html += '<th style="padding:8px 10px;border:1px solid #ddd;text-align:left;font-weight:600;color:#666">BDC</th>';
   html += '<th style="' + td + ';font-weight:600;color:#666">Cash</th>';
@@ -134141,7 +134192,6 @@ function renderLiqWaterfall(tickers, liqResults) {
   html += '<th style="' + td + ';font-weight:600;color:#666">Unfunded Draws</th>';
   html += '<th style="' + td + ';font-weight:600;color:#666">Near-Term Maturities</th>';
   html += '<th style="' + td + ';font-weight:600;color:#666">Net Liquidity</th>';
-  html += '<th style="' + td + ';font-weight:600;color:#666"></th>';
   html += '</tr></thead><tbody>';
   for (const t of tickers) {
     const r = liqResults[t];
@@ -134149,13 +134199,12 @@ function renderLiqWaterfall(tickers, liqResults) {
     const netColor = r.netLiq >= 0 ? '#27ae60' : '#c0392b';
     html += '<tr>';
     html += '<td style="' + td + ';text-align:left;font-weight:600">' + t + '</td>';
-    html += '<td style="' + td + '">' + fmtDollar(r.cash) + '</td>';
-    html += '<td style="' + td + '">' + fmtDollar(r.revolverAdj) + '</td>';
+    html += '<td style="' + td + ';' + click + '" onclick="toggleLiqDetail(\'' + t + '\',\'cash\',' + NC + ')">' + fmtDollar(r.cash) + '</td>';
+    html += '<td style="' + td + ';' + click + '" onclick="toggleLiqDetail(\'' + t + '\',\'revolver\',' + NC + ')">' + fmtDollar(r.revolverAdj) + '</td>';
     html += '<td style="' + td + ';font-weight:600">' + fmtDollar(r.grossLiq) + '</td>';
-    html += '<td style="' + td + ';color:#c0392b">(' + fmtDollar(r.stressedDraw) + ')</td>';
-    html += '<td style="' + td + ';color:#c0392b">(' + fmtDollar(r.nearTermMat) + ')</td>';
+    html += '<td style="' + td + ';color:#c0392b;' + click + '" onclick="toggleLiqDetail(\'' + t + '\',\'unfunded\',' + NC + ')">(' + fmtDollar(r.stressedDraw) + ')</td>';
+    html += '<td style="' + td + ';color:#c0392b;' + click + '" onclick="toggleLiqDetail(\'' + t + '\',\'maturities\',' + NC + ')">(' + fmtDollar(r.nearTermMat) + ')</td>';
     html += '<td style="' + td + ';font-weight:700;font-size:14px;color:' + netColor + '">' + fmtDollar(r.netLiq) + '</td>';
-    html += '<td style="' + td + ';text-align:center"><button onclick="showLiqAudit(\'' + t + '\')" style="background:none;border:1px solid #ccc;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px;color:#666" title="Audit liquidity data">Audit</button></td>';
     html += '</tr>';
   }
   html += '</tbody></table>';
@@ -135662,7 +135711,7 @@ setTimeout(() => {
 (function() {
   const el = document.createElement('div');
   el.style.cssText = 'position:fixed;bottom:8px;right:12px;font-size:10px;color:#999;z-index:1000;pointer-events:none';
-  const deployTs = 'Apr 15, 2026 8:14 PM ';
+  const deployTs = 'Apr 15, 2026 8:53 PM ';
   if (deployTs.startsWith('__')) {
     el.textContent = 'Local dev';
   } else {
