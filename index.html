@@ -131941,6 +131941,7 @@ function recalculate() {
   updateWaterfall(c.lossByBDC, c.encLossByBDC, c.unencLossByBDC);
   updateStacks();
   renderHoldingsTable();
+  if (selectedView === 'liquidity') renderLiquidityTab();
 }
 
 // ======== CHARTS ========
@@ -133794,7 +133795,7 @@ let coverageChart = null;
 function renderLiquidityTab() {
   if (!DATA.liquidity) return;
   const tickers = getPortfoliosToCalc();
-  if (!_computed) { computeStress(); }
+  computeStress();
   const c = _computed;
 
   // Compute liquidity metrics per BDC
@@ -134204,7 +134205,7 @@ function computeCashFlowProjection(ticker) {
   const years = cf.projection_years;
 
   // Post-stress equity: subtract portfolio losses from book equity
-  if (!_computed) { computeStress(); }
+  computeStress();
   const portfolioLoss = (_computed && _computed.lossByBDC[ticker]) || 0;
   const postStressEquity = Math.max(0, cf.equity - portfolioLoss);
 
@@ -134530,7 +134531,7 @@ function renderLiquidityProjection(ticker) {
               if (!items.length) return '';
               const yr = items[0].label;
               const stack = items[0].dataset.stack;
-              if (items[0].dataset.type === 'line') return yr + ' — Cash Flow Coverage';
+              if (items[0].dataset.type === 'line') return yr + ' — ' + items[0].dataset.label;
               return yr + ' — ' + (stack === 'inflows' ? 'Assets / Inflows' : 'Liabilities / Outflows');
             },
             label: ctx => {
@@ -134568,7 +134569,7 @@ function renderLiquidityProjection(ticker) {
           ticks: { color: '#888', font: { size: 11 }, callback: v => v + '%' },
           grid: { display: false },
           border: { display: false },
-          title: { display: true, text: 'Cash Flow Coverage', color: '#888', font: { size: 11 } },
+          title: { display: true, text: 'Coverage Ratio', color: '#888', font: { size: 11 } },
         },
       },
     },
