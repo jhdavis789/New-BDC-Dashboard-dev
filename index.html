@@ -135057,18 +135057,16 @@ function toggleProjDetail(key, section) {
   const table = container.querySelector('table');
   if (!table) return;
 
-  const detailId = 'proj-detail-' + key;
-  const existing = document.getElementById(detailId);
+  const wasOpenKey = _projOpenKey;
 
-  // Remove any open detail
-  const prev = table.querySelector('.proj-detail-row');
-  if (prev) prev.remove();
+  // Remove any open detail rows
+  table.querySelectorAll('.proj-detail-row').forEach(r => r.remove());
 
   // Reset all arrow rotations
   table.querySelectorAll('.proj-expand-arrow').forEach(a => a.style.transform = '');
 
   // If clicking same row, just close
-  if (existing) { _projOpenKey = null; _projOpenSection = null; return; }
+  if (wasOpenKey === key) { _projOpenKey = null; _projOpenSection = null; return; }
 
   const content = buildProjDetail(_projTicker, key);
   if (!content) return;
@@ -135081,17 +135079,8 @@ function toggleProjDetail(key, section) {
   const arrow = targetRow.querySelector('.proj-expand-arrow');
   if (arrow) arrow.style.transform = 'rotate(90deg)';
 
-  // Insert detail row
-  const numCols = _projData.cumulative.length + 1;
-  const detailRow = document.createElement('tr');
-  detailRow.id = detailId;
-  detailRow.className = 'proj-detail-row';
-  const detailCell = document.createElement('td');
-  detailCell.colSpan = numCols;
-  detailCell.style.cssText = 'padding:12px 20px 16px;background:#f9f9f7;border:1px solid #e0e0dc;border-top:none';
-  detailCell.innerHTML = '<div style="max-width:720px;font-size:12px">' + content + '</div>';
-  detailRow.appendChild(detailCell);
-  targetRow.after(detailRow);
+  // Insert detail rows directly into the parent table so column widths align.
+  targetRow.insertAdjacentHTML('afterend', content);
 
   _projOpenKey = key;
   _projOpenSection = section;
@@ -135103,60 +135092,78 @@ function buildProjDetail(ticker, key) {
   if (!cf || !liq) return '';
 
   const years = cf.projection_years;
+  const numCols = years.length + 1;
+  // Detail rows are inserted directly into the parent table and share its
+  // column widths. Banner-style rows (header, ledger, notes, gear) use
+  // colspan=numCols. Data rows use one label cell + one cell per year.
+  const DETAIL_BG = '#f9f9f7';
+  const DETAIL_CLASS = 'proj-detail-row';
+  const labelTd = 'padding:4px 10px;text-align:left;font-size:11px;background:' + DETAIL_BG;
+  const dataTd = 'padding:4px 10px;text-align:right;font-size:11px;background:' + DETAIL_BG + ';font-variant-numeric:tabular-nums';
+  const bannerTd = 'padding:6px 20px;background:' + DETAIL_BG + ';font-size:11px;color:#555';
 
-  // === Vertical accounting ledger helpers ===
-  const drow = (label, val, op, color) => {
+  const gearBtn = (id) =>
+    '<span style="cursor:pointer;color:#bbb;font-size:14px;float:right" onclick="event.stopPropagation();var e=document.getElementById(\'' + id + '\');e.style.display=e.style.display===\'none\'?\'block\':\'none\'" title="Adjust assumptions">&#9881;</span>';
+
+  const hdrRow = (text, gear) =>
+    '<tr class="' + DETAIL_CLASS + '"><td colspan="' + numCols + '" style="' + bannerTd + ';padding-top:10px;border-top:1px solid #e0e0dc;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:0.3px">' +
+    text + (gear || '') + '</td></tr>';
+  const srcRow = (text) =>
+    '<tr class="' + DETAIL_CLASS + '"><td colspan="' + numCols + '" style="' + bannerTd + ';font-size:10px;color:#aaa;padding-top:2px;padding-bottom:2px">' + text + '</td></tr>';
+  const noteRow = (text) =>
+    '<tr class="' + DETAIL_CLASS + '"><td colspan="' + numCols + '" style="' + bannerTd + ';font-size:10px;color:#aaa;font-style:italic;padding-top:2px;padding-bottom:8px;border-bottom:1px solid #e0e0dc">' + text + '</td></tr>';
+  const rawRow = (innerHTML) =>
+    '<tr class="' + DETAIL_CLASS + '"><td colspan="' + numCols + '" style="' + bannerTd + '">' + innerHTML + '</td></tr>';
+
+  // Ledger helpers: flex-aligned label/value pairs inside a banner cell.
+  const ledgerLine = (label, val, op, color) => {
     const sign = op === '-' ? '&minus;' : op === '+' ? '+' : '';
     const c = color || (op === '-' ? '#c0392b' : '#555');
     return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #f0f0ec">' +
       '<span style="color:#777">' + sign + ' ' + label + '</span>' +
       '<span style="color:' + c + ';font-weight:500">' + fmtDollar(val) + '</span></div>';
   };
-  const dimrow = (label, val) =>
-    '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #f0f0ec">' +
-    '<span style="color:#ccc;font-style:italic">' + label + '</span>' +
-    '<span style="color:#ccc">' + fmtDollar(val) + '</span></div>';
-  const totalrow = (label, val, color) =>
+  const ledgerTotal = (label, val, color) =>
     '<div style="display:flex;justify-content:space-between;padding:5px 0;border-top:2px solid #ccc;font-weight:700">' +
     '<span style="color:#333">' + label + '</span>' +
     '<span style="color:' + (color || '#333') + '">' + fmtDollar(val) + '</span></div>';
-  const pctrow = (label, val) =>
+  const ledgerPct = (label, val) =>
     '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #f0f0ec">' +
     '<span style="color:#777">&times; ' + label + '</span>' +
     '<span style="color:#555;font-weight:500">' + val + '</span></div>';
-  const hdr = (text, gear) =>
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
-    '<span style="font-weight:600;color:#555;font-size:11px;text-transform:uppercase;letter-spacing:0.3px">' + text + '</span>' +
-    (gear || '') + '</div>';
-  const src = (text) => '<div style="font-size:10px;color:#aaa;padding-top:4px">' + text + '</div>';
-  const gearBtn = (id) =>
-    '<span style="cursor:pointer;color:#bbb;font-size:14px" onclick="event.stopPropagation();var e=document.getElementById(\'' + id + '\');e.style.display=e.style.display===\'none\'?\'block\':\'none\'" title="Adjust assumptions">&#9881;</span>';
 
-  // Mini-table builder for year-column breakdowns
+  // Year-column rows aligned to the parent table's columns.
   const miniTable = (rows) => {
-    const s = 'padding:4px 8px;font-size:11px;';
-    let h = '<table style="width:100%;border-collapse:collapse;margin:6px 0">';
-    h += '<tr><td style="' + s + 'min-width:180px"></td>';
-    for (const yr of years) h += '<td style="' + s + 'text-align:right;color:#999;font-weight:600;min-width:80px">Cum. ' + yr + '</td>';
-    h += '</tr>';
+    let h = '';
     for (const row of rows) {
-      if (row.separator) { h += '<tr><td colspan="' + (years.length + 1) + '" style="padding:0;height:1px;border-top:1px solid #ddd"></td></tr>'; continue; }
-      if (row.total) {
-        h += '<tr style="border-top:2px solid ' + (row.borderColor || '#ccc') + '">';
-        h += '<td style="' + s + 'font-weight:700;color:#333">' + row.label + '</td>';
-        for (const yr of years) { const v = (row.values || {})[yr] || 0; h += '<td style="' + s + 'text-align:right;font-weight:700;color:' + (row.color || '#333') + '">' + (v ? fmtDollar(v) : '\u2014') + '</td>'; }
-        h += '</tr>'; continue;
+      if (row.separator) {
+        h += '<tr class="' + DETAIL_CLASS + '"><td colspan="' + numCols + '" style="padding:0;height:1px;border-top:1px solid #ddd;background:' + DETAIL_BG + '"></td></tr>';
+        continue;
       }
-      if (row.sectionHeader) { h += '<tr><td colspan="' + (years.length + 1) + '" style="' + s + 'font-weight:600;color:#555;padding-top:8px;border-bottom:none">' + row.label + '</td></tr>'; continue; }
+      if (row.sectionHeader) {
+        h += '<tr class="' + DETAIL_CLASS + '"><td colspan="' + numCols + '" style="' + bannerTd + ';font-weight:600;color:#555;padding-top:8px;padding-bottom:2px">' + row.label + '</td></tr>';
+        continue;
+      }
       const dimmed = row.dimmed;
-      h += '<tr style="border-bottom:1px solid #f0f0ec">';
-      h += '<td style="' + s + (row.indent ? 'padding-left:16px;' : '') + 'color:' + (row.labelColor || (dimmed ? '#bbb' : '#777')) + (dimmed ? ';font-style:italic' : '') + '">' + row.label;
-      if (row.note) h += ' <span style="color:#bbb;font-size:10px">' + row.note + '</span>';
+      const isTotal = !!row.total;
+      const rowBorder = isTotal ? ('border-top:2px solid ' + (row.borderColor || '#ccc') + ';') : 'border-bottom:1px solid #f0f0ec;';
+      const labelColor = row.labelColor || (isTotal ? '#333' : (dimmed ? '#bbb' : '#777'));
+      const weight = isTotal ? 'font-weight:700;' : '';
+      const italic = dimmed ? 'font-style:italic;' : '';
+      const indent = isTotal ? 'padding-left:24px;' : (row.indent ? 'padding-left:40px;' : 'padding-left:24px;');
+      h += '<tr class="' + DETAIL_CLASS + '">';
+      h += '<td style="' + labelTd + ';' + rowBorder + indent + weight + italic + 'color:' + labelColor + '">';
+      h += row.label;
+      if (row.note) h += ' <span style="color:#bbb;font-size:10px;font-weight:400;font-style:normal">' + row.note + '</span>';
       h += '</td>';
-      for (const yr of years) { const v = (row.values || {})[yr] || 0; const defaultColor = dimmed ? '#bbb' : (v > 0 ? '#555' : '#ccc'); h += '<td style="' + s + 'text-align:right;color:' + (row.color || defaultColor) + (dimmed ? ';font-style:italic' : '') + '">' + (v ? fmtDollar(v) : '\u2014') + '</td>'; }
+      for (const yr of years) {
+        const v = (row.values || {})[yr] || 0;
+        const defaultColor = isTotal ? '#333' : (dimmed ? '#bbb' : (v > 0 ? '#555' : '#ccc'));
+        const cellColor = row.color || defaultColor;
+        h += '<td style="' + dataTd + ';' + rowBorder + weight + italic + 'color:' + cellColor + '">' + (v ? fmtDollar(v) : '\u2014') + '</td>';
+      }
       h += '</tr>';
     }
-    h += '</table>';
     return h;
   };
 
@@ -135172,7 +135179,7 @@ function buildProjDetail(ticker, key) {
     const inclRestr = document.getElementById('liqIncludeRestricted') && document.getElementById('liqIncludeRestricted').checked;
     const cd = liq.cash_detail || {};
     const gid = 'proj-gear-cash';
-    let h = hdr('Cash on Hand \u2014 Component Breakdown', gearBtn(gid));
+    let h = hdrRow('Cash on Hand \u2014 Component Breakdown', gearBtn(gid));
     const LABELS = {
       cash: 'Cash', cash_equivalents: 'Cash equivalents',
       cash_and_cash_equivalents: 'Cash & cash equivalents',
@@ -135214,19 +135221,21 @@ function buildProjDetail(ticker, key) {
     rows.push({ separator: true });
     rows.push({ total: true, label: 'Cumulative cash on hand', values: allYears(cf.cash_on_hand), color: '#2d8a56' });
     h += miniTable(rows);
-    h += '<div id="' + gid + '" style="display:none;margin-top:8px;padding:8px 12px;background:#f5f5f0;border-radius:4px;border:1px solid #e0e0dc">';
-    h += '<label style="font-size:11px;color:#666;display:flex;align-items:center;gap:6px;cursor:pointer">';
-    h += '<input type="checkbox" ' + (inclRestr ? 'checked' : '') + ' onchange="document.getElementById(\'liqIncludeRestricted\').checked=this.checked;renderLiquidityTab()" style="cursor:pointer">';
-    h += 'Include restricted cash</label></div>';
-    h += src('Source: SEC EDGAR balance-sheet line items (as filed)');
-    h += '<div style="font-size:10px;color:#aaa;font-style:italic;padding-top:2px">Year-1 opening balance; carried forward through each cumulative column.</div>';
+    h += rawRow(
+      '<div id="' + gid + '" style="display:none;margin-top:4px;padding:6px 10px;background:#f5f5f0;border-radius:4px;border:1px solid #e0e0dc">' +
+      '<label style="font-size:11px;color:#666;display:flex;align-items:center;gap:6px;cursor:pointer">' +
+      '<input type="checkbox" ' + (inclRestr ? 'checked' : '') + ' onchange="document.getElementById(\'liqIncludeRestricted\').checked=this.checked;renderLiquidityTab()" style="cursor:pointer">' +
+      'Include restricted cash</label></div>'
+    );
+    h += srcRow('Source: SEC EDGAR balance-sheet line items (as filed)');
+    h += noteRow('Year-1 opening balance; carried forward through each cumulative column.');
     return h;
   }
 
   // ── UNDRAWN REVOLVERS ─────────────────────────────────────────────────
   case 'revolverCapacity': {
     const gid = 'proj-gear-rev';
-    let h = hdr('Undrawn Revolvers \u2014 Facility Detail', gearBtn(gid));
+    let h = hdrRow('Undrawn Revolvers \u2014 Facility Detail', gearBtn(gid));
     const revs = (liq.debt_instruments || []).filter(i => i.type === 'revolving_credit' || i.type === 'secured_credit_facility');
     const riskPct = typeof liqRevolverRisk !== 'undefined' ? liqRevolverRisk : 0;
     const rows = [];
@@ -135243,24 +135252,26 @@ function buildProjDetail(ticker, key) {
       rows.push({ label: inst.name, values: vals, indent: true, note: meta });
     }
     if (revs.length === 0) {
-      h += '<div style="color:#999;font-size:11px;padding:4px 0">No revolving facilities found</div>';
+      h += rawRow('<div style="color:#999;font-size:11px;padding:4px 0">No revolving facilities found</div>');
     } else {
       rows.push({ separator: true });
       rows.push({ total: true, label: 'Net revolver capacity' + (riskPct > 0 ? ' (after ' + riskPct + '% risk adj)' : ''), values: totalsByYear, color: '#2c6fbb' });
       h += miniTable(rows);
     }
-    h += '<div id="' + gid + '" style="display:none;margin-top:8px;padding:8px 12px;background:#f5f5f0;border-radius:4px;border:1px solid #e0e0dc">';
-    h += '<label style="font-size:11px;color:#666;display:flex;align-items:center;gap:8px">';
-    h += 'Revolver risk: <input type="range" min="0" max="100" value="' + riskPct + '" style="flex:1" oninput="this.nextElementSibling.textContent=this.value+\'%\'" onchange="liqRevolverRisk=parseInt(this.value);renderLiquidityTab()"> <span>' + riskPct + '%</span>';
-    h += '</label></div>';
-    h += src('Source: Balance sheet \u2014 revolving credit facilities');
-    h += '<div style="font-size:10px;color:#aaa;font-style:italic;padding-top:2px">Undrawn capacity carried forward; drops to zero after facility maturity.</div>';
+    h += rawRow(
+      '<div id="' + gid + '" style="display:none;margin-top:4px;padding:6px 10px;background:#f5f5f0;border-radius:4px;border:1px solid #e0e0dc">' +
+      '<label style="font-size:11px;color:#666;display:flex;align-items:center;gap:8px">' +
+      'Revolver risk: <input type="range" min="0" max="100" value="' + riskPct + '" style="flex:1" oninput="this.nextElementSibling.textContent=this.value+\'%\'" onchange="liqRevolverRisk=parseInt(this.value);renderLiquidityTab()"> <span>' + riskPct + '%</span>' +
+      '</label></div>'
+    );
+    h += srcRow('Source: Balance sheet \u2014 revolving credit facilities');
+    h += noteRow('Undrawn capacity carried forward through each cumulative column.');
     return h;
   }
 
   // ── CASH INTEREST INCOME ──────────────────────────────────────────────
   case 'cashInterest': {
-    let h = hdr('Cash Interest Income \u2014 By Seniority');
+    let h = hdrRow('Cash Interest Income \u2014 By Seniority');
     // First build annual amounts, then accumulate.
     const bySenAnnual = {}, annualTotals = {};
     for (const yr of years) annualTotals[yr] = 0;
@@ -135295,14 +135306,14 @@ function buildProjDetail(ticker, key) {
     rows.push({ separator: true });
     rows.push({ total: true, label: 'Cumulative interest (post-stress)', values: toCumulative(annualTotals), color: '#2d8a56' });
     h += miniTable(rows);
-    if (cf.rate_coverage_pct < 100) h += src('\u26a0 ' + cf.rate_coverage_pct.toFixed(0) + '% explicit rate coverage \u2014 ' + (100 - cf.rate_coverage_pct).toFixed(0) + '% imputed at ' + cf.portfolio_avg_rate.toFixed(1) + '%');
-    h += src('Source: SOI filings \u2014 position-level rates \u00d7 par amounts');
+    if (cf.rate_coverage_pct < 100) h += srcRow('\u26a0 ' + cf.rate_coverage_pct.toFixed(0) + '% explicit rate coverage \u2014 ' + (100 - cf.rate_coverage_pct).toFixed(0) + '% imputed at ' + cf.portfolio_avg_rate.toFixed(1) + '%');
+    h += srcRow('Source: SOI filings \u2014 position-level rates \u00d7 par amounts');
     return h;
   }
 
   // ── PRINCIPAL REPAYMENTS ──────────────────────────────────────────────
   case 'principalRepayments': {
-    let h = hdr('Principal Repayments \u2014 By Seniority');
+    let h = hdrRow('Principal Repayments \u2014 By Seniority');
     const bySenAnnual = {}, annualTotals = {};
     for (const yr of years) annualTotals[yr] = 0;
     for (const sector in cf.principal_matrix) {
@@ -135332,8 +135343,8 @@ function buildProjDetail(ticker, key) {
     rows.push({ separator: true });
     rows.push({ total: true, label: 'Cumulative repayments (post-stress)', values: toCumulative(annualTotals), color: '#2d8a56' });
     h += miniTable(rows);
-    h += src('Source: SOI filings \u2014 par amounts \u00d7 maturity dates');
-    h += '<div style="font-size:10px;color:#aaa;font-style:italic;padding-top:2px">New positions first appear in the column matching their maturity year.</div>';
+    h += srcRow('Source: SOI filings \u2014 par amounts \u00d7 maturity dates');
+    h += noteRow('New positions first appear in the column matching their maturity year.');
     return h;
   }
 
@@ -135344,33 +135355,38 @@ function buildProjDetail(ticker, key) {
     const ploss = (_computed && _computed.lossByBDC && _computed.lossByBDC[ticker]) || 0;
     const postEq = Math.max(0, cf.equity - ploss);
     const annDiv = postEq * (liqDividendRate / 100) * 4;
-    let h = hdr('Dividends \u2014 Calculation', gearBtn(gid));
-    // Calculation ledger (same each year)
-    h += drow('Book equity', cf.equity, '');
+    let h = hdrRow('Dividends \u2014 Calculation', gearBtn(gid));
+    // Calculation ledger (same every year): emit inside one banner row.
+    let ledger = '<div style="max-width:520px;font-size:12px">';
+    ledger += ledgerLine('Book equity', cf.equity, '');
     if (ploss > 0) {
-      h += drow('Stress loss', ploss, '-');
-      h += '<div style="display:flex;justify-content:space-between;padding:3px 0;border-top:1px solid #ddd">' +
+      ledger += ledgerLine('Stress loss', ploss, '-');
+      ledger += '<div style="display:flex;justify-content:space-between;padding:3px 0;border-top:1px solid #ddd">' +
         '<span style="color:#555;font-weight:600">= Post-stress equity</span>' +
         '<span style="color:#555;font-weight:600">' + fmtDollar(postEq) + '</span></div>';
     }
-    h += pctrow('Quarterly rate \u00d7 4 qtrs', liqDividendRate + '% \u00d7 4');
-    h += totalrow('Annual dividend (paid each year)', annDiv, '#a33');
+    ledger += ledgerPct('Quarterly rate \u00d7 4 qtrs', liqDividendRate + '% \u00d7 4');
+    ledger += ledgerTotal('Annual dividend (paid each year)', annDiv, '#a33');
+    ledger += '</div>';
+    h += rawRow(ledger);
     // Cumulative time series
     const cumDiv = {}; let run = 0;
     for (const yr of years) { run += annDiv; cumDiv[yr] = run; }
     h += miniTable([
       { total: true, label: 'Cumulative dividends paid', values: cumDiv, color: '#a33' },
     ]);
-    h += '<div id="' + gid + '" style="display:none;margin-top:8px;padding:8px 12px;background:#f5f5f0;border-radius:4px;border:1px solid #e0e0dc">';
-    h += '<label style="font-size:11px;color:#666;display:flex;align-items:center;gap:8px">';
-    h += 'Dividend rate: <input type="range" min="0" max="20" step="0.5" value="' + liqDividendRate + '" style="flex:1" oninput="this.nextElementSibling.textContent=this.value+\'%/qtr\'" onchange="liqDividendRate=parseFloat(this.value);document.getElementById(\'liq-div-r\').value=this.value;document.getElementById(\'liq-div-n\').value=this.value;renderLiquidityTab()"> <span>' + liqDividendRate + '%/qtr</span>';
-    h += '</label></div>';
+    h += rawRow(
+      '<div id="' + gid + '" style="display:none;margin-top:4px;padding:6px 10px;background:#f5f5f0;border-radius:4px;border:1px solid #e0e0dc">' +
+      '<label style="font-size:11px;color:#666;display:flex;align-items:center;gap:8px">' +
+      'Dividend rate: <input type="range" min="0" max="20" step="0.5" value="' + liqDividendRate + '" style="flex:1" oninput="this.nextElementSibling.textContent=this.value+\'%/qtr\'" onchange="liqDividendRate=parseFloat(this.value);document.getElementById(\'liq-div-r\').value=this.value;document.getElementById(\'liq-div-n\').value=this.value;renderLiquidityTab()"> <span>' + liqDividendRate + '%/qtr</span>' +
+      '</label></div>'
+    );
     return h;
   }
 
   // ── NOTE REPAYMENT ────────────────────────────────────────────────────
   case 'debtRepayment': {
-    let h = hdr('Note Repayment \u2014 Maturity Schedule');
+    let h = hdrRow('Note Repayment \u2014 Maturity Schedule');
     const instruments = cf.bdc_debt.instruments || [];
     const notes = instruments.filter(i => !i.is_clo && !i.is_revolver);
     const liqByName = {};
@@ -135395,18 +135411,17 @@ function buildProjDetail(ticker, key) {
     rows.push({ total: true, label: 'Cumulative repayment', values: totals, color: '#a33' });
     h += miniTable(rows);
     if (beyondWindow.length > 0) {
-      h += '<div style="font-size:10px;color:#aaa;padding-top:4px">Beyond ' + years[years.length - 1] + ': ';
-      h += beyondWindow.map(n => { const li = liqByName[n.name]; return n.name + ' (' + fmtDollar(n.outstanding) + (li && li.maturity_date ? ', ' + li.maturity_date : '') + ')'; }).join(', ');
-      h += '</div>';
+      const beyondList = beyondWindow.map(n => { const li = liqByName[n.name]; return n.name + ' (' + fmtDollar(n.outstanding) + (li && li.maturity_date ? ', ' + li.maturity_date : '') + ')'; }).join(', ');
+      h += srcRow('Beyond ' + years[years.length - 1] + ': ' + beyondList);
     }
-    h += src('Source: Balance sheet \u2014 unsecured notes &amp; term debt');
-    h += '<div style="font-size:10px;color:#aaa;font-style:italic;padding-top:2px">Each note first appears in its maturity-year column and carries forward.</div>';
+    h += srcRow('Source: Balance sheet \u2014 unsecured notes &amp; term debt');
+    h += noteRow('Each note first appears in its maturity-year column and carries forward.');
     return h;
   }
 
   // ── REVOLVER/FACILITY REPAYMENT ───────────────────────────────────────
   case 'revolverRepayment': {
-    let h = hdr('Revolver/Facility Repayment \u2014 Schedule');
+    let h = hdrRow('Revolver/Facility Repayment \u2014 Schedule');
     const instruments = cf.bdc_debt.instruments || [];
     const revs = instruments.filter(i => i.is_revolver);
     const sources = revs.length > 0 ? revs : (liq.debt_instruments || []).filter(i => i.type === 'revolving_credit' || i.type === 'secured_credit_facility');
@@ -135423,7 +135438,7 @@ function buildProjDetail(ticker, key) {
       rows.push({ label: rev.name, values: vals, indent: true, note: rateStr ? rateStr + ' \u00b7 ' + matStr : matStr });
     }
     if (rows.length === 0) {
-      h += '<div style="color:#999;font-size:11px;padding:4px 0">No revolving facility maturities in projection window</div>';
+      h += rawRow('<div style="color:#999;font-size:11px;padding:4px 0">No revolving facility maturities in projection window</div>');
       return h;
     }
     const totals = {}; let run = 0;
@@ -135431,14 +135446,14 @@ function buildProjDetail(ticker, key) {
     rows.push({ separator: true });
     rows.push({ total: true, label: 'Cumulative repayment', values: totals, color: '#a33' });
     h += miniTable(rows);
-    h += src('Source: Balance sheet \u2014 revolving facilities (outstanding at maturity)');
-    h += '<div style="font-size:10px;color:#aaa;font-style:italic;padding-top:2px">Outstanding drawn balance repaid at maturity; carried forward.</div>';
+    h += srcRow('Source: Balance sheet \u2014 revolving facilities (outstanding at maturity)');
+    h += noteRow('Outstanding drawn balance repaid at maturity; carried forward.');
     return h;
   }
 
   // ── DEBT INTEREST EXPENSE ─────────────────────────────────────────────
   case 'debtInterest': {
-    let h = hdr('Debt Interest Expense \u2014 By Instrument');
+    let h = hdrRow('Debt Interest Expense \u2014 By Instrument');
     const instruments = cf.bdc_debt.instruments || [];
     const groups = [
       { label: 'Unsecured Notes', filter: i => !i.is_clo && !i.is_revolver && !i.secured },
@@ -135471,16 +135486,16 @@ function buildProjDetail(ticker, key) {
     rows.push({ total: true, label: 'Cumulative interest', values: totals, color: '#a33' });
     h += miniTable(rows);
     const rc = DATA.rates_curve || {};
-    if (rc.sofr) h += src('Floating-rate: SOFR ' + rc.sofr.toFixed(2) + '% + spread (FRED)');
-    h += src('Source: Balance sheet \u2014 all instruments \u00d7 stated/SOFR rates');
-    h += '<div style="font-size:10px;color:#aaa;font-style:italic;padding-top:2px">Interest accrues until maturity; values carry forward.</div>';
+    if (rc.sofr) h += srcRow('Floating-rate: SOFR ' + rc.sofr.toFixed(2) + '% + spread (FRED)');
+    h += srcRow('Source: Balance sheet \u2014 all instruments \u00d7 stated/SOFR rates');
+    h += noteRow('Interest accrues until maturity; values carry forward.');
     return h;
   }
 
   // ── UNFUNDED DRAWS ────────────────────────────────────────────────────
   case 'unfundedDraw': {
     const gid = 'proj-gear-unfunded';
-    let h = hdr('Unfunded Draws \u2014 Stress Calculation', gearBtn(gid));
+    let h = hdrRow('Unfunded Draws \u2014 Stress Calculation', gearBtn(gid));
     const details = liq.unfunded_detail || [];
     const drawRate = liqDrawRate / 100;
     const rows = [];
@@ -135496,12 +135511,14 @@ function buildProjDetail(ticker, key) {
     rows.push({ separator: true });
     rows.push({ total: true, label: 'Cumulative stressed draw (' + liqDrawRate + '% draw rate)', values: allYears(stressed), color: '#a33' });
     h += miniTable(rows);
-    h += '<div id="' + gid + '" style="display:none;margin-top:8px;padding:8px 12px;background:#f5f5f0;border-radius:4px;border:1px solid #e0e0dc">';
-    h += '<label style="font-size:11px;color:#666;display:flex;align-items:center;gap:8px">';
-    h += 'Draw rate: <input type="range" min="0" max="100" value="' + liqDrawRate + '" style="flex:1" oninput="this.nextElementSibling.textContent=this.value+\'%\'" onchange="liqDrawRate=parseFloat(this.value);document.getElementById(\'liq-draw-r\').value=this.value;document.getElementById(\'liq-draw-n\').value=this.value;renderLiquidityTab()"> <span>' + liqDrawRate + '%</span>';
-    h += '</label></div>';
-    h += src('Source: SOI filings \u2014 unfunded commitments schedule');
-    h += '<div style="font-size:10px;color:#aaa;font-style:italic;padding-top:2px">Immediate year-1 draw; carried forward through each cumulative column.</div>';
+    h += rawRow(
+      '<div id="' + gid + '" style="display:none;margin-top:4px;padding:6px 10px;background:#f5f5f0;border-radius:4px;border:1px solid #e0e0dc">' +
+      '<label style="font-size:11px;color:#666;display:flex;align-items:center;gap:8px">' +
+      'Draw rate: <input type="range" min="0" max="100" value="' + liqDrawRate + '" style="flex:1" oninput="this.nextElementSibling.textContent=this.value+\'%\'" onchange="liqDrawRate=parseFloat(this.value);document.getElementById(\'liq-draw-r\').value=this.value;document.getElementById(\'liq-draw-n\').value=this.value;renderLiquidityTab()"> <span>' + liqDrawRate + '%</span>' +
+      '</label></div>'
+    );
+    h += srcRow('Source: SOI filings \u2014 unfunded commitments schedule');
+    h += noteRow('Immediate year-1 draw; carried forward through each cumulative column.');
     return h;
   }
 
@@ -136497,7 +136514,7 @@ setTimeout(() => {
 (function() {
   const el = document.createElement('div');
   el.style.cssText = 'position:fixed;bottom:8px;right:12px;font-size:10px;color:#999;z-index:1000;pointer-events:none';
-  const deployTs = 'Apr 16, 2026 9:26 AM ';
+  const deployTs = 'Apr 16, 2026 9:37 AM ';
   if (deployTs.startsWith('__')) {
     el.textContent = 'Local dev';
   } else {
