@@ -1132,67 +1132,92 @@
       </div>
     </div>
 
-    <!-- Liquidity-Specific Assumptions -->
+    <!-- Liquidity-Specific Assumptions (collapsed banners; click chips to expand) -->
+    <style>
+      .liq-collapse-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:8px 10px;cursor:pointer;user-select:none;border-radius:6px;transition:background 0.12s}
+      .liq-collapse-header:hover{background:#f5f5f0}
+      .liq-collapse-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#333;margin:0}
+      .liq-collapse-arrow{display:inline-block;font-size:10px;color:#aaa;transition:transform 0.15s}
+      .liq-collapse-wrap.open .liq-collapse-arrow{transform:rotate(90deg)}
+      .liq-chips{display:flex;gap:6px;flex-wrap:wrap;font-size:11px}
+      .liq-chip{background:#f0f0ec;border:1px solid #e0e0dc;border-radius:12px;padding:2px 10px;color:#555;white-space:nowrap}
+      .liq-chip-value{font-weight:600;color:#333;margin-left:4px}
+      .liq-collapse-body{display:none;padding-top:10px;margin-top:4px;border-top:1px solid #eee}
+      .liq-collapse-wrap.open .liq-collapse-body{display:block}
+    </style>
     <div class="controls-panel" style="grid-template-columns:1fr">
       <div class="control-box">
-        <h3>Liquidity Assumptions</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
-          <div>
-            <div class="slider-row"><span class="slider-label">Borrower-Drawable Draw Rate <span class="info-btn" data-info="liqDraw" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="100" value="100" id="liq-draw-r"><input type="number" min="0" max="100" value="100" id="liq-draw-n"><span class="pct-suffix">%</span></div>
-            <div class="slider-row"><span class="slider-label">BDC-Contingent Draw Rate <span class="info-btn" data-info="liqContingent" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="100" value="10" id="liq-contingent-r"><input type="number" min="0" max="100" value="10" id="liq-contingent-n"><span class="pct-suffix">%</span></div>
-            <div class="info-popup" data-popup="liqDraw" style="display:none">
-              <p><strong>Borrower-Drawable Unfunded</strong> — % of revolver and delayed-draw term-loan commitments assumed to be drawn by borrowers during stress. In a downturn, distressed borrowers max out credit lines, forcing the BDC to fund new loans at par into a declining portfolio.</p>
-            </div>
-            <div class="info-popup" data-popup="liqContingent" style="display:none">
-              <p><strong>BDC-Contingent Unfunded</strong> — % of BDC-controlled equity or JV commitments (SDLP, COPJV, portfolio-company equity) assumed to be funded. These are not borrower-initiated draws — the BDC typically funds these only when deals close or JV capital calls occur. Default 10% reflects that contingent events are materially less likely than borrower-driven revolver draws.</p>
-            </div>
+        <!-- LIQUIDITY ASSUMPTIONS (collapsible) -->
+        <div class="liq-collapse-wrap" id="liqAssumpWrap">
+          <div class="liq-collapse-header" onclick="toggleLiqCollapse('liqAssumpWrap')">
+            <h3 class="liq-collapse-title"><span class="liq-collapse-arrow">&#9654;</span> Liquidity Assumptions</h3>
+            <div class="liq-chips" id="liqAssumpChips"></div>
           </div>
-          <div>
-            <div class="slider-row"><span class="slider-label">Forced Sale Disc. <span class="info-btn" data-info="liqSale" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="50" value="0" id="liq-sale-r"><input type="number" min="0" max="50" value="0" id="liq-sale-n"><span class="pct-suffix">%</span></div>
-            <div class="info-popup" data-popup="liqSale" style="display:none">
-              <p><strong>Forced Sale Discount</strong> — haircut applied if assets must be liquidated quickly to raise cash.</p>
-              <p>Middle-market loans are illiquid. In stress, forced sellers receive well below fair value. A 15% discount means $1B of assets yields only $850M in cash — the liquidity premium for fire-sale conditions.</p>
-            </div>
-          </div>
-          <div>
-            <div class="slider-row"><span class="slider-label">Dividend Rate /qtr <span class="info-btn" data-info="liqDiv" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="20" value="5" step="0.5" id="liq-div-r"><input type="number" min="0" max="20" value="5" step="0.5" id="liq-div-n"><span class="pct-suffix">%</span></div>
-            <div class="slider-row"><span class="slider-label">Revolver Capacity Haircut <span class="info-btn" data-info="liqRevRisk" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="100" value="0" id="liq-revrisk-r"><input type="number" min="0" max="100" value="0" id="liq-revrisk-n"><span class="pct-suffix">%</span></div>
-            <div class="info-popup" data-popup="liqDiv" style="display:none">
-              <p><strong>Dividend Rate</strong> — quarterly dividend as % of post-stress equity (annualized = 4&times; this rate).</p>
-              <p>BDCs must distribute 90%+ of taxable income to maintain RIC tax status. This is a mandatory cash drain that can't easily be stopped even in stress. The rate is applied to post-stress equity, so larger portfolio losses automatically reduce the dividend burden.</p>
-            </div>
-            <div class="info-popup" data-popup="liqRevRisk" style="display:none">
-              <p><strong>Revolver Capacity Haircut</strong> &mdash; stress assumption for how much of the BDC's undrawn revolver capacity becomes unavailable in a liquidity crisis (lender covenant breaches, counterparty risk).</p>
+          <div class="liq-collapse-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+              <div>
+                <div class="slider-row"><span class="slider-label">Borrower-Drawable Draw Rate <span class="info-btn" data-info="liqDraw" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="100" value="100" id="liq-draw-r"><input type="number" min="0" max="100" value="100" id="liq-draw-n"><span class="pct-suffix">%</span></div>
+                <div class="slider-row"><span class="slider-label">BDC-Contingent Draw Rate <span class="info-btn" data-info="liqContingent" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="100" value="10" id="liq-contingent-r"><input type="number" min="0" max="100" value="10" id="liq-contingent-n"><span class="pct-suffix">%</span></div>
+                <div class="info-popup" data-popup="liqDraw" style="display:none">
+                  <p><strong>Borrower-Drawable Unfunded</strong> &mdash; % of revolver and delayed-draw term-loan commitments assumed to be drawn by borrowers during stress. In a downturn, distressed borrowers max out credit lines, forcing the BDC to fund new loans at par into a declining portfolio.</p>
+                </div>
+                <div class="info-popup" data-popup="liqContingent" style="display:none">
+                  <p><strong>BDC-Contingent Unfunded</strong> &mdash; % of BDC-controlled equity or JV commitments (SDLP, COPJV, portfolio-company equity) assumed to be funded. These are not borrower-initiated draws &mdash; the BDC typically funds these only when deals close or JV capital calls occur. Default 10% reflects that contingent events are materially less likely than borrower-driven revolver draws.</p>
+                </div>
+              </div>
+              <div>
+                <div class="slider-row"><span class="slider-label">Forced Sale Disc. <span class="info-btn" data-info="liqSale" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="50" value="0" id="liq-sale-r"><input type="number" min="0" max="50" value="0" id="liq-sale-n"><span class="pct-suffix">%</span></div>
+                <div class="info-popup" data-popup="liqSale" style="display:none">
+                  <p><strong>Forced Sale Discount</strong> &mdash; haircut applied if assets must be liquidated quickly to raise cash.</p>
+                  <p>Middle-market loans are illiquid. In stress, forced sellers receive well below fair value. A 15% discount means $1B of assets yields only $850M in cash &mdash; the liquidity premium for fire-sale conditions.</p>
+                </div>
+              </div>
+              <div>
+                <div class="slider-row"><span class="slider-label">Dividend Rate /qtr <span class="info-btn" data-info="liqDiv" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="20" value="5" step="0.5" id="liq-div-r"><input type="number" min="0" max="20" value="5" step="0.5" id="liq-div-n"><span class="pct-suffix">%</span></div>
+                <div class="slider-row"><span class="slider-label">Revolver Capacity Haircut <span class="info-btn" data-info="liqRevRisk" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="100" value="0" id="liq-revrisk-r"><input type="number" min="0" max="100" value="0" id="liq-revrisk-n"><span class="pct-suffix">%</span></div>
+                <div class="info-popup" data-popup="liqDiv" style="display:none">
+                  <p><strong>Dividend Rate</strong> &mdash; quarterly dividend as % of post-stress equity (annualized = 4&times; this rate).</p>
+                  <p>BDCs must distribute 90%+ of taxable income to maintain RIC tax status. This is a mandatory cash drain that can't easily be stopped even in stress. The rate is applied to post-stress equity, so larger portfolio losses automatically reduce the dividend burden.</p>
+                </div>
+                <div class="info-popup" data-popup="liqRevRisk" style="display:none">
+                  <p><strong>Revolver Capacity Haircut</strong> &mdash; stress assumption for how much of the BDC's undrawn revolver capacity becomes unavailable in a liquidity crisis (lender covenant breaches, counterparty risk).</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Defaults Control -->
-        <div style="border-top:1px solid #eee;margin-top:14px;padding-top:12px">
-          <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
-            <h4 style="font-size:13px;font-weight:600;margin:0;color:#333">Defaults Control <span style="font-weight:400;color:#888;font-size:11px">(decomposition of total loss rate &mdash; placeholder, not yet wired into projections)</span></h4>
-            <span style="font-size:12px;color:#666">Total Loss Rate: <strong id="liq-tlr-display" style="color:#c0392b">0.00%</strong></span>
+        <!-- DEFAULTS CONTROL (collapsible) -->
+        <div class="liq-collapse-wrap" id="liqDefaultsWrap" style="border-top:1px solid #eee;margin-top:8px;padding-top:8px">
+          <div class="liq-collapse-header" onclick="toggleLiqCollapse('liqDefaultsWrap')">
+            <h3 class="liq-collapse-title"><span class="liq-collapse-arrow">&#9654;</span> Defaults Control <span style="font-weight:400;color:#888;font-size:11px;margin-left:4px">(timing split &mdash; stress matrix drives loss magnitude)</span></h3>
+            <div class="liq-chips" id="liqDefaultsChips"></div>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
-            <div>
-              <div class="slider-row"><span class="slider-label">Default Rate <span class="info-btn" data-info="liqDefRate" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="100" value="10" step="0.1" id="liq-defrate-r"><input type="number" min="0" max="100" value="10" step="0.1" id="liq-defrate-n"><span class="pct-suffix">%</span></div>
-              <div class="info-popup" data-popup="liqDefRate" style="display:none">
-                <p><strong>Default Rate</strong> &mdash; % of portfolio that defaults during the stress horizon.</p>
-                <p>Default Rate &times; (1 &minus; Recovery) = Total Loss Rate. Moving this slider auto-adjusts Recovery to keep the total loss rate constant.</p>
-              </div>
+          <div class="liq-collapse-body">
+            <div style="display:flex;align-items:baseline;justify-content:flex-end;margin-bottom:8px">
+              <span style="font-size:12px;color:#666">Total Loss Rate (from stress matrix): <strong id="liq-tlr-display" style="color:#c0392b">0.00%</strong></span>
             </div>
-            <div>
-              <div class="slider-row"><span class="slider-label">Recovery Given Default <span class="info-btn" data-info="liqRecovery" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="100" value="60" step="0.1" id="liq-recovery-r"><input type="number" min="0" max="100" value="60" step="0.1" id="liq-recovery-n"><span class="pct-suffix">%</span></div>
-              <div class="info-popup" data-popup="liqRecovery" style="display:none">
-                <p><strong>Recovery Given Default</strong> &mdash; cents on the dollar recovered after default (1 &minus; LGD).</p>
-                <p>Moving this slider auto-adjusts Default Rate to keep the total loss rate constant.</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+              <div>
+                <div class="slider-row"><span class="slider-label">Default Rate <span class="info-btn" data-info="liqDefRate" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="100" value="10" step="0.1" id="liq-defrate-r"><input type="number" min="0" max="100" value="10" step="0.1" id="liq-defrate-n"><span class="pct-suffix">%</span></div>
+                <div class="info-popup" data-popup="liqDefRate" style="display:none">
+                  <p><strong>Default Rate</strong> &mdash; portfolio-implied default rate over the stress horizon.</p>
+                  <p>Relationship: Default Rate &times; (1 &minus; Recovery) = Total Loss Rate (fixed by the stress-tab matrix). Moving this slider auto-adjusts Recovery so total loss stays invariant with the stress model.</p>
+                </div>
               </div>
-            </div>
-            <div>
-              <div class="slider-row"><span class="slider-label">Time to Work Out <span class="info-btn" data-info="liqWorkout" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="60" value="18" step="1" id="liq-workout-r"><input type="number" min="0" max="60" value="18" step="1" id="liq-workout-n"><span class="pct-suffix" style="width:20px">mo</span></div>
-              <div class="info-popup" data-popup="liqWorkout" style="display:none">
-                <p><strong>Time to Work Out</strong> &mdash; months between default and realized recovery. Controls how long cash is tied up in defaulted positions before recoveries flow in.</p>
-                <p>Placeholder for future cash-flow timing &mdash; not yet wired into projections.</p>
+              <div>
+                <div class="slider-row"><span class="slider-label">Recovery Given Default <span class="info-btn" data-info="liqRecovery" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="100" value="60" step="0.1" id="liq-recovery-r"><input type="number" min="0" max="100" value="60" step="0.1" id="liq-recovery-n"><span class="pct-suffix">%</span></div>
+                <div class="info-popup" data-popup="liqRecovery" style="display:none">
+                  <p><strong>Recovery Given Default</strong> &mdash; cents on the dollar recovered after default (1 &minus; LGD). Higher recovery = more cash comes back at the workout year, fewer loans need to default to produce the same total loss.</p>
+                  <p>Moving this slider auto-adjusts Default Rate to keep the total loss rate (from the stress matrix) constant.</p>
+                </div>
+              </div>
+              <div>
+                <div class="slider-row"><span class="slider-label">Time to Work Out <span class="info-btn" data-info="liqWorkout" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="60" value="18" step="1" id="liq-workout-r"><input type="number" min="0" max="60" value="18" step="1" id="liq-workout-n"><span class="pct-suffix" style="width:20px">mo</span></div>
+                <div class="info-popup" data-popup="liqWorkout" style="display:none">
+                  <p><strong>Time to Work Out</strong> &mdash; months between default and realized recovery. Controls how long cash is tied up in defaulted positions. Recovery cash lands as a lump sum in year (horizon start + ceil(months/12)).</p>
+                  <p>Defaulted loans pay no interest during workout; only the surviving share continues to pay cash interest through maturity.</p>
+                </div>
               </div>
             </div>
           </div>
@@ -1235,10 +1260,14 @@
           </div>
           <div class="info-popup" data-popup="liqProjection" style="display:none;position:relative;margin-top:8px">
             <p><strong>Cumulative inflows vs outflows</strong> over the 5-year projection horizon (2026-2030).
-            Each year's bar includes all prior years. Stress rates from the Stress Model tab reduce both
-            interest income and principal recoveries proportionally.</p>
-            <p>CLO principal repayment is excluded (non-recourse, match-funded), but CLO <em>interest expense</em> is included as a cash outflow. PIK income is tracked but not
-            counted as a cash inflow. Dividend rate is adjustable above (default 5%/qtr of equity).</p>
+            Each year's bar includes all prior years.</p>
+            <p>Stress matrix (sector &times; seniority) drives the loss magnitude and is shared with the Stress Model tab. The Liquidity tab's Defaults Control then decomposes that loss into timing components:</p>
+            <ul style="margin:4px 0 8px 18px;padding:0">
+              <li><strong>Surviving share</strong> pays cash interest + principal at scheduled maturity.</li>
+              <li><strong>Defaulted share</strong> stops paying interest immediately; a portion returns as a <em>Defaulted-Loan Recoveries</em> lump at workout-year (horizon + ceil(months/12)).</li>
+              <li>Permanent loss = combined &times; FV, identical to the stress tab.</li>
+            </ul>
+            <p>CLO principal repayment is excluded (non-recourse, match-funded), but CLO <em>interest expense</em> is included as a cash outflow. PIK income is tracked but not counted as a cash inflow. Dividend rate is adjustable above (default 5%/qtr of equity).</p>
             <p id="liqSofrNote" style="font-style:italic;color:#666"></p>
           </div>
         </div>
@@ -134052,6 +134081,7 @@ const LIQ_CHART_KEY_MAP = {
   'Undrawn Revolvers': 'revolverCapacity',
   'Cash Interest Income': 'cashInterest',
   'Principal Repayments': 'principalRepayments',
+  'Defaulted-Loan Recoveries': 'recoveries',
   'Liquidity Coverage': 'coverageLiquidity',
   'Secured Debt Coverage': 'coverageSecured',
   'Unsecured Debt Coverage': 'coverageUnsecured',
@@ -134099,10 +134129,45 @@ function showLiqModal(title, bodyHtml) {
       else liqForcedSale = v;
       document.getElementById(ids[0]).value = v;
       document.getElementById(ids[1]).value = v;
+      updateLiqAssumptionsSummary();
     });
     el.addEventListener('change', () => { renderLiquidityTab(); });
   });
 });
+
+// Collapsible-banner toggle for Liquidity Assumptions / Defaults Control
+function toggleLiqCollapse(wrapId) {
+  const w = document.getElementById(wrapId);
+  if (!w) return;
+  w.classList.toggle('open');
+}
+
+// Chip summary updaters — populate the collapsed banners with current values
+function updateLiqAssumptionsSummary() {
+  const el = document.getElementById('liqAssumpChips');
+  if (!el) return;
+  const chip = (label, val) => '<span class="liq-chip">' + label + ':<span class="liq-chip-value">' + val + '</span></span>';
+  el.innerHTML =
+    chip('Borrower Draw', liqDrawRate.toFixed(0) + '%') +
+    chip('BDC-Contingent', liqContingentRate.toFixed(0) + '%') +
+    chip('Forced Sale', liqForcedSale.toFixed(0) + '%') +
+    chip('Dividend/qtr', liqDividendRate.toFixed(1) + '%') +
+    chip('Revolver Haircut', liqRevolverRisk.toFixed(0) + '%');
+}
+
+function updateDefaultsSummary() {
+  const el = document.getElementById('liqDefaultsChips');
+  if (el) {
+    const chip = (label, val) => '<span class="liq-chip">' + label + ':<span class="liq-chip-value">' + val + '</span></span>';
+    el.innerHTML =
+      chip('DR', liqDefaultRate.toFixed(1) + '%') +
+      chip('Recovery', liqRecoveryRate.toFixed(0) + '%') +
+      chip('Workout', liqWorkoutMonths + 'mo') +
+      chip('Loss', getTotalLossRate().toFixed(2) + '%');
+  }
+  const tlrEl = document.getElementById('liq-tlr-display');
+  if (tlrEl) tlrEl.textContent = getTotalLossRate().toFixed(2) + '%';
+}
 
 // Defaults control: default rate, recovery given default, time to work out
 function getTotalLossRate() {
@@ -134125,6 +134190,7 @@ function syncDefaultsControlUI() {
   if (wr) wr.value = liqWorkoutMonths;
   if (wn) wn.value = liqWorkoutMonths;
   if (tlrEl) tlrEl.textContent = getTotalLossRate().toFixed(2) + '%';
+  updateDefaultsSummary();
 }
 
 // Rebalance default/recovery to preserve TLR = default × (1 − recovery/100)
@@ -134169,6 +134235,10 @@ function rebalanceDefaultsControl(source) {
       if (key === 'defrate') { liqDefaultRate = v; rebalanceDefaultsControl('default'); }
       else if (key === 'recovery') { liqRecoveryRate = v; rebalanceDefaultsControl('recovery'); }
       else { liqWorkoutMonths = v; }
+      updateDefaultsSummary();
+    });
+    el.addEventListener('change', () => {
+      if (selectedView === 'liquidity') renderLiquidityTab();
     });
   });
 });
@@ -134187,6 +134257,7 @@ function applyLiqPreset(name) {
   document.getElementById('liq-draw-n').value = p.draw;
   document.getElementById('liq-sale-r').value = p.sale;
   document.getElementById('liq-sale-n').value = p.sale;
+  updateLiqAssumptionsSummary();
   renderLiquidityTab();
 }
 
@@ -134198,6 +134269,13 @@ function renderLiquidityTab() {
   const tickers = getPortfoliosToCalc();
   computeStress();
   const c = _computed;
+
+  // Keep the collapsed-banner chips current when stress sliders move or tab opens.
+  updateLiqAssumptionsSummary();
+  // Drive Defaults Control off the current stress matrix: TLR changed, so
+  // rebalance the last-edited slider to keep TLR = DR × (1-RR) in sync.
+  rebalanceDefaultsControl('external');
+  updateDefaultsSummary();
 
   // Compute liquidity metrics per BDC
   const liqResults = {};
@@ -134709,6 +134787,41 @@ function renderUnfundedTable(tickers, liqResults) {
 
 // ======== 5-YEAR LIQUIDITY PROJECTION ========
 
+// Decompose a stress-matrix loss rate into timing components, keyed off the
+// liquidity tab's Recovery Given Default slider. The stress-model permanent
+// loss (= combined × FV) is the invariant, so stress-tab KPIs are unchanged;
+// what shifts between the survivor/recovery buckets is how much cash arrives
+// on time vs. after the workout period vs. never.
+//
+//   combined    = 1 - (1 - senRate)(1 - secRate)  — total bucket loss rate
+//   recoveryRate= liqRecoveryRate / 100           — cents on the dollar post-default
+//   lgd         = 1 - recoveryRate
+//
+// If combined < lgd we can back out a consistent default frequency:
+//   defaultFrac = combined / lgd         (share of bucket that defaults)
+//   surviving   = 1 - defaultFrac        (pays interest through maturity)
+//   recovery    = defaultFrac × recovery (lumped in at workout year)
+//   permanent   = defaultFrac × lgd = combined   ← invariant
+//
+// If combined ≥ lgd the user's recovery slider is higher than this bucket's
+// loss allows. We pin defaultFrac at 1 and shrink recovery so that
+// permanent = combined still holds (i.e. this bucket behaves as if every
+// loan defaulted with LGD = combined).
+function decomposeBucketLoss(combined, recoveryRate) {
+  if (combined <= 0) return { surviving: 1, recovery: 0, permanentLoss: 0 };
+  const rr = Math.max(0, Math.min(1, recoveryRate));
+  const lgd = 1 - rr;
+  if (lgd > 0 && combined < lgd) {
+    const defaultFrac = combined / lgd;
+    return {
+      surviving: 1 - defaultFrac,
+      recovery: defaultFrac * rr,
+      permanentLoss: combined,
+    };
+  }
+  return { surviving: 0, recovery: Math.max(0, 1 - combined), permanentLoss: combined };
+}
+
 function computeCashFlowProjection(ticker) {
   const cf = DATA.cash_flow_data[ticker];
   if (!cf) return null;
@@ -134724,6 +134837,12 @@ function computeCashFlowProjection(ticker) {
   const postStressEquity = Math.max(0, cf.equity - portfolioLoss);
   let equityRunning = postStressEquity;
 
+  // Recovery lump year: defaulted principal returns after the workout window.
+  // Workout < 12mo → year 1, 12-24mo → year 2, etc.
+  const firstProjYr = years[0];
+  const workoutYr = firstProjYr + Math.ceil(Math.max(0, liqWorkoutMonths) / 12);
+  const recoveryRateDecimal = (liqRecoveryRate || 0) / 100;
+
   const incremental = years.map(yr => {
     // === INFLOWS ===
     let cashInterest = 0;
@@ -134733,30 +134852,45 @@ function computeCashFlowProjection(ticker) {
       const secRate = (sectorRates[sector] || 0) / 100;
       for (const senType in cf.interest_matrix[sector]) {
         const senRate = (seniorityRates[senType] || 0) / 100;
-        const impairment = 1 - (1 - senRate) * (1 - secRate);
-        const survival = 1 - impairment;
+        const combined = 1 - (1 - senRate) * (1 - secRate);
+        const { surviving } = decomposeBucketLoss(combined, recoveryRateDecimal);
 
         for (const matYr in cf.interest_matrix[sector][senType]) {
           if (matYr === 'none') continue;
           const matYrInt = parseInt(matYr);
           if (matYrInt < yr) continue; // already matured
           const cell = cf.interest_matrix[sector][senType][matYr];
-          cashInterest += (cell.cash + cell.imputed) * survival;
-          pikInterest += cell.pik * survival;
+          // Only surviving loans pay interest; defaulted loans stop paying
+          // from default date (approximated as year-1 start) through workout.
+          cashInterest += (cell.cash + cell.imputed) * surviving;
+          pikInterest += cell.pik * surviving;
         }
       }
     }
 
-    // Principal repayments from positions maturing THIS year
+    // Principal repayments from positions maturing THIS year (surviving share
+    // only — defaulted share's recovery returns in workoutYr regardless of
+    // original maturity).
     let principalRepayments = 0;
+    let recoveries = 0;
     for (const sector in cf.principal_matrix) {
       const secRate = (sectorRates[sector] || 0) / 100;
       for (const senType in cf.principal_matrix[sector]) {
         const senRate = (seniorityRates[senType] || 0) / 100;
-        const impairment = 1 - (1 - senRate) * (1 - secRate);
-        const survival = 1 - impairment;
+        const combined = 1 - (1 - senRate) * (1 - secRate);
+        const { surviving, recovery } = decomposeBucketLoss(combined, recoveryRateDecimal);
         const parMaturing = cf.principal_matrix[sector][senType][String(yr)] || 0;
-        principalRepayments += parMaturing * survival;
+        principalRepayments += parMaturing * surviving;
+
+        // Recovery lump: sum defaulted par from all non-'none' maturity
+        // buckets (>= firstProjYr), paid out at workoutYr.
+        if (yr === workoutYr && recovery > 0) {
+          for (const matYr in cf.principal_matrix[sector][senType]) {
+            if (matYr === 'none') continue;
+            if (parseInt(matYr) < firstProjYr) continue;
+            recoveries += (cf.principal_matrix[sector][senType][matYr] || 0) * recovery;
+          }
+        }
       }
     }
 
@@ -134790,7 +134924,7 @@ function computeCashFlowProjection(ticker) {
 
     return {
       year: yr,
-      inflows: { cashInterest, principalRepayments, cashOnHand, revolverCapacity },
+      inflows: { cashInterest, principalRepayments, recoveries, cashOnHand, revolverCapacity },
       outflows: { dividend, debtRepayment, revolverRepayment, debtInterest, unfundedDraw },
       pikInterest,
       equity: { open: equityOpen, netInterest: annualNetInterest, preDividend: equityPreDividend, dividend, close: equityClose },
@@ -134832,28 +134966,41 @@ function computeCashFlowProjection(ticker) {
       for (const sen in cf.interest_matrix[sector]) {
         if (!isLineExcluded('cashInterest', sen)) continue;
         const senRate = (seniorityRates[sen] || 0) / 100;
-        const survival = (1 - senRate) * (1 - secRate);
+        const combined = 1 - (1 - senRate) * (1 - secRate);
+        const { surviving } = decomposeBucketLoss(combined, recoveryRateDecimal);
         for (const mYr in cf.interest_matrix[sector][sen]) {
           if (mYr === 'none' || parseInt(mYr) < yr) continue;
           const cell = cf.interest_matrix[sector][sen][mYr];
-          entry.inflows.cashInterest -= (cell.cash + cell.imputed) * survival;
+          entry.inflows.cashInterest -= (cell.cash + cell.imputed) * surviving;
         }
       }
     }
     if (entry.inflows.cashInterest < 0) entry.inflows.cashInterest = 0;
 
-    // Principal repayments: drop excluded seniority buckets
+    // Principal repayments + recoveries: drop excluded seniority buckets.
+    // Excluding a seniority removes both its on-time principal AND the
+    // delayed-recovery cash tied to the same bucket — they're the same
+    // instruments, split by timing.
     for (const sector in cf.principal_matrix) {
       const secRate = (sectorRates[sector] || 0) / 100;
       for (const sen in cf.principal_matrix[sector]) {
         if (!isLineExcluded('principalRepayments', sen)) continue;
         const senRate = (seniorityRates[sen] || 0) / 100;
-        const survival = (1 - senRate) * (1 - secRate);
+        const combined = 1 - (1 - senRate) * (1 - secRate);
+        const { surviving, recovery } = decomposeBucketLoss(combined, recoveryRateDecimal);
         const par = cf.principal_matrix[sector][sen][String(yr)] || 0;
-        entry.inflows.principalRepayments -= par * survival;
+        entry.inflows.principalRepayments -= par * surviving;
+        if (yr === workoutYr && recovery > 0) {
+          for (const mYr in cf.principal_matrix[sector][sen]) {
+            if (mYr === 'none') continue;
+            if (parseInt(mYr) < firstProjYr) continue;
+            entry.inflows.recoveries -= (cf.principal_matrix[sector][sen][mYr] || 0) * recovery;
+          }
+        }
       }
     }
     if (entry.inflows.principalRepayments < 0) entry.inflows.principalRepayments = 0;
+    if (entry.inflows.recoveries < 0) entry.inflows.recoveries = 0;
 
     // Note repayment: drop excluded instruments (per tranche or single)
     for (const inst of (cf.bdc_debt.instruments || [])) {
@@ -134927,7 +135074,7 @@ function computeCashFlowProjection(ticker) {
 
   // Build cumulative
   const cumulative = [];
-  let cumIn = { cashInterest: 0, principalRepayments: 0, cashOnHand: 0, revolverCapacity: 0 };
+  let cumIn = { cashInterest: 0, principalRepayments: 0, recoveries: 0, cashOnHand: 0, revolverCapacity: 0 };
   let cumOut = { dividend: 0, debtRepayment: 0, revolverRepayment: 0, debtInterest: 0, unfundedDraw: 0 };
 
   for (const yr of incremental) {
@@ -134996,15 +135143,23 @@ function renderLiquidityProjection(ticker) {
       : '';
   }
 
-  // Rate coverage warning
+  // Rate coverage warning + workout-beyond-horizon recovery flag
   const coverageEl = document.getElementById('liqProjectionRateCoverage');
   if (coverageEl && cf) {
+    const years = cf.projection_years || [];
+    const firstYr = years[0];
+    const lastYr = years[years.length - 1];
+    const workoutYrLocal = firstYr + Math.ceil(Math.max(0, liqWorkoutMonths) / 12);
+    const notes = [];
     if (cf.rate_coverage_pct < 80) {
-      coverageEl.innerHTML = '<span style="background:#fef3e0;border:1px solid #f0c36d;border-radius:4px;padding:2px 8px">' +
-        '&#9888; ' + cf.rate_coverage_pct.toFixed(0) + '% rate coverage — imputed at ' + cf.portfolio_avg_rate.toFixed(1) + '% avg</span>';
-    } else {
-      coverageEl.textContent = '';
+      notes.push('<span style="background:#fef3e0;border:1px solid #f0c36d;border-radius:4px;padding:2px 8px">' +
+        '&#9888; ' + cf.rate_coverage_pct.toFixed(0) + '% rate coverage \u2014 imputed at ' + cf.portfolio_avg_rate.toFixed(1) + '% avg</span>');
     }
+    if (workoutYrLocal > lastYr && liqRecoveryRate > 0) {
+      notes.push('<span style="background:#fef3e0;border:1px solid #f0c36d;border-radius:4px;padding:2px 8px;margin-left:6px" title="Recovery cash lands at workout year (' + workoutYrLocal + '), outside the ' + firstYr + '\u2013' + lastYr + ' projection horizon. Lower workout months to surface recoveries, or interpret current numbers as conservative.">' +
+        '&#9888; Recoveries due ' + workoutYrLocal + ' (post-horizon)</span>');
+    }
+    coverageEl.innerHTML = notes.join('');
   }
 
   // Summary cards
@@ -135076,6 +135231,10 @@ function renderLiquidityProjection(ticker) {
           data: projection.cumulative.map(c => c.inflows.principalRepayments / 1e9),
           backgroundColor: '#4CAF6A', borderColor: '#3E9B5A', borderWidth: 1,
           stack: 'inflows', categoryPercentage: 0.72, barPercentage: 0.92 },
+        { label: 'Defaulted-Loan Recoveries',
+          data: projection.cumulative.map(c => c.inflows.recoveries / 1e9),
+          backgroundColor: '#8BB88E', borderColor: '#719E74', borderWidth: 1,
+          stack: 'inflows', categoryPercentage: 0.72, barPercentage: 0.92 },
         // Coverage ratio lines (right y-axis)
         { label: 'Liquidity Coverage',
           data: projection.coverageByYear.map(c => c.liquidityCov),
@@ -135112,7 +135271,7 @@ function renderLiquidityProjection(ticker) {
         html += '<div style="flex:1;min-width:220px">';
         html += '<div style="font-weight:700;color:#27ae60;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px"><span style="display:inline-block;width:8px;height:8px;background:#7CAE7A;border-radius:2px;margin-right:6px;vertical-align:middle"></span>Cumulative Inflows</div>';
         html += '<table style="width:100%;border-collapse:collapse;font-size:12px">';
-        const inKeys = [['cashOnHand','Cash on Hand'],['revolverCapacity','Undrawn Revolvers'],['cashInterest','Cash Interest Income'],['principalRepayments','Principal Repayments']];
+        const inKeys = [['cashOnHand','Cash on Hand'],['revolverCapacity','Undrawn Revolvers'],['cashInterest','Cash Interest Income'],['principalRepayments','Principal Repayments'],['recoveries','Defaulted-Loan Recoveries']];
         for (const [k,l] of inKeys) {
           const v = c.inflows[k];
           html += '<tr style="border-bottom:1px solid #eee"><td style="padding:5px 8px;color:#666">' + l + '</td><td style="padding:5px 8px;text-align:right;color:' + (v > 0 ? '#2d8a56' : '#999') + '">' + fD(v) + '</td></tr>';
@@ -135327,6 +135486,7 @@ function renderProjectionTable(ticker, projection) {
     ['revolverCapacity', 'Undrawn Revolvers'],
     ['cashInterest', 'Cash Interest Income'],
     ['principalRepayments', 'Principal Repayments'],
+    ['recoveries', 'Defaulted-Loan Recoveries'],
   ];
   html += '<tr><td colspan="' + (n + 1) + '" style="padding:10px 10px 5px;font-size:11px;font-weight:700;color:#27ae60;letter-spacing:0.5px;text-transform:uppercase;border-bottom:none">' +
     '<span style="display:inline-block;width:8px;height:8px;background:#7CAE7A;border-radius:2px;margin-right:6px;vertical-align:middle"></span>Inflows</td></tr>';
@@ -135493,14 +135653,19 @@ function buildProjDetail(ticker, key) {
       // Line-item exclusion support: rows supply parentKey + lineKey. When
       // either is set we render a ✕ toggle and strike the row through when
       // it's currently excluded.
+      // `forceExcluded` lets callers style a row as excluded (strike + zero)
+      // without registering it in the exclusion map (used for sub-rows that
+      // inherit their parent's state — e.g. sector rows under a seniority).
       const excluded = row.parentKey && row.lineKey
-        ? isLineExcluded(row.parentKey, row.lineKey) : false;
+        ? isLineExcluded(row.parentKey, row.lineKey) : !!row.forceExcluded;
       const rowBorder = isTotal ? ('border-top:2px solid ' + (row.borderColor || '#ccc') + ';') : 'border-bottom:1px solid #f0f0ec;';
       const labelColor = row.labelColor || (isTotal ? '#333' : (dimmed ? '#bbb' : '#777'));
       const weight = isTotal ? 'font-weight:700;' : '';
       const italic = dimmed ? 'font-style:italic;' : '';
       const strike = excluded ? 'text-decoration:line-through;opacity:0.45;' : '';
-      const indent = isTotal ? 'padding-left:24px;' : (row.indent ? 'padding-left:40px;' : 'padding-left:24px;');
+      const indent = isTotal ? 'padding-left:24px;'
+        : row.indent2 ? 'padding-left:56px;'
+        : row.indent ? 'padding-left:40px;' : 'padding-left:24px;';
       h += '<tr class="' + DETAIL_CLASS + '">';
       h += '<td style="' + labelTd + ';' + rowBorder + indent + weight + italic + strike + 'color:' + labelColor + '">';
       if (row.parentKey && row.lineKey) {
@@ -135623,23 +135788,35 @@ function buildProjDetail(ticker, key) {
 
   // ── CASH INTEREST INCOME ──────────────────────────────────────────────
   case 'cashInterest': {
-    let h = hdrRow('Cash Interest Income \u2014 By Seniority');
-    // First build annual amounts, then accumulate.
-    const bySenAnnual = {}, annualTotals = {};
-    for (const yr of years) annualTotals[yr] = 0;
+    let h = hdrRow('Cash Interest Income \u2014 By Seniority \u00d7 Sector');
+    // Build annual amounts by seniority, and also decomposed by sector
+    // within each seniority so the user can see which sector drives each
+    // bucket. Uses the same loss decomposition as the chart: only the
+    // surviving share pays interest; defaulted share stops paying from
+    // year 1 onward.
+    const rrDec = (liqRecoveryRate || 0) / 100;
+    const bySen = {}; // bySen[sen] = { annual:{yr→$}, bySec:{sector→{yr→$}} }
     for (const sector in cf.interest_matrix) {
       const secR = (sectorRates[sector] || 0) / 100;
       for (const sen in cf.interest_matrix[sector]) {
         const senR = (seniorityRates[sen] || 0) / 100;
-        const survival = (1 - senR) * (1 - secR);
-        if (!bySenAnnual[sen]) { bySenAnnual[sen] = {}; for (const yr of years) bySenAnnual[sen][yr] = 0; }
+        const combined = 1 - (1 - senR) * (1 - secR);
+        const { surviving } = decomposeBucketLoss(combined, rrDec);
+        if (!bySen[sen]) {
+          bySen[sen] = { annual: {}, bySec: {} };
+          for (const yr of years) bySen[sen].annual[yr] = 0;
+        }
+        if (!bySen[sen].bySec[sector]) {
+          bySen[sen].bySec[sector] = {};
+          for (const yr of years) bySen[sen].bySec[sector][yr] = 0;
+        }
         for (const yr of years) {
           for (const mYr in cf.interest_matrix[sector][sen]) {
             if (mYr === 'none' || parseInt(mYr) < yr) continue;
             const cell = cf.interest_matrix[sector][sen][mYr];
-            const amt = (cell.cash + cell.imputed) * survival;
-            bySenAnnual[sen][yr] += amt;
-            annualTotals[yr] += amt;
+            const amt = (cell.cash + cell.imputed) * surviving;
+            bySen[sen].bySec[sector][yr] += amt;
+            bySen[sen].annual[yr] += amt;
           }
         }
       }
@@ -135651,40 +135828,56 @@ function buildProjDetail(ticker, key) {
       return out;
     };
     const rows = [];
-    // Rebuild the cumulative "effective" total net of any excluded seniority
-    // buckets so the totals row matches the chart.
     const effectiveAnnual = {}; for (const yr of years) effectiveAnnual[yr] = 0;
-    for (const sen of sortSen(Object.keys(bySenAnnual))) {
-      if (!Object.values(bySenAnnual[sen]).some(v => v > 0)) continue;
-      const included = !isLineExcluded('cashInterest', sen);
-      if (included) for (const yr of years) effectiveAnnual[yr] += bySenAnnual[sen][yr] || 0;
+    for (const sen of sortSen(Object.keys(bySen))) {
+      if (!Object.values(bySen[sen].annual).some(v => v > 0)) continue;
+      const senExcluded = isLineExcluded('cashInterest', sen);
+      if (!senExcluded) for (const yr of years) effectiveAnnual[yr] += bySen[sen].annual[yr] || 0;
       rows.push({ parentKey: 'cashInterest', lineKey: sen,
-        label: senLabels[sen] || sen, values: toCumulative(bySenAnnual[sen]), indent: true });
+        label: senLabels[sen] || sen, values: toCumulative(bySen[sen].annual), indent: true });
+      // Sector sub-rows, ordered by cumulative amount desc. Visual only —
+      // they inherit the seniority's exclusion state (forceExcluded).
+      const sectorEntries = Object.entries(bySen[sen].bySec)
+        .map(([sec, a]) => [sec, a, Object.values(a).reduce((s, v) => s + v, 0)])
+        .filter(([, , tot]) => tot > 0)
+        .sort((a, b) => b[2] - a[2]);
+      for (const [sec, annual] of sectorEntries) {
+        rows.push({ label: '\u21B3 ' + sec, values: toCumulative(annual),
+          indent2: true, dimmed: true, forceExcluded: senExcluded });
+      }
     }
     rows.push({ separator: true });
     rows.push({ total: true, label: 'Cumulative interest (post-stress)', values: toCumulative(effectiveAnnual), color: '#2d8a56' });
     h += miniTable(rows);
     if (cf.rate_coverage_pct < 100) h += srcRow('\u26a0 ' + cf.rate_coverage_pct.toFixed(0) + '% explicit rate coverage \u2014 ' + (100 - cf.rate_coverage_pct).toFixed(0) + '% imputed at ' + cf.portfolio_avg_rate.toFixed(1) + '%');
-    h += srcRow('Source: SOI filings \u2014 position-level rates \u00d7 par amounts. Click \u2715 to exclude a seniority bucket.');
+    h += srcRow('Source: SOI filings \u2014 position-level rates \u00d7 par amounts, grouped by sector \u00d7 seniority. Survivor share from stress matrix pays in full; defaulted share stops paying. Click \u2715 on a seniority to exclude the whole bucket.');
     return h;
   }
 
   // ── PRINCIPAL REPAYMENTS ──────────────────────────────────────────────
   case 'principalRepayments': {
-    let h = hdrRow('Principal Repayments \u2014 By Seniority');
-    const bySenAnnual = {}, annualTotals = {};
-    for (const yr of years) annualTotals[yr] = 0;
+    let h = hdrRow('Principal Repayments \u2014 By Seniority \u00d7 Sector (Surviving Share)');
+    const rrDec = (liqRecoveryRate || 0) / 100;
+    const bySen = {}; // bySen[sen] = { annual:{yr→$}, bySec:{sector→{yr→$}} }
     for (const sector in cf.principal_matrix) {
       const secR = (sectorRates[sector] || 0) / 100;
       for (const sen in cf.principal_matrix[sector]) {
         const senR = (seniorityRates[sen] || 0) / 100;
-        const survival = (1 - senR) * (1 - secR);
-        if (!bySenAnnual[sen]) { bySenAnnual[sen] = {}; for (const yr of years) bySenAnnual[sen][yr] = 0; }
+        const combined = 1 - (1 - senR) * (1 - secR);
+        const { surviving } = decomposeBucketLoss(combined, rrDec);
+        if (!bySen[sen]) {
+          bySen[sen] = { annual: {}, bySec: {} };
+          for (const yr of years) bySen[sen].annual[yr] = 0;
+        }
+        if (!bySen[sen].bySec[sector]) {
+          bySen[sen].bySec[sector] = {};
+          for (const yr of years) bySen[sen].bySec[sector][yr] = 0;
+        }
         for (const yr of years) {
           const par = cf.principal_matrix[sector][sen][String(yr)] || 0;
-          const adj = par * survival;
-          bySenAnnual[sen][yr] += adj;
-          annualTotals[yr] += adj;
+          const adj = par * surviving;
+          bySen[sen].bySec[sector][yr] += adj;
+          bySen[sen].annual[yr] += adj;
         }
       }
     }
@@ -135695,18 +135888,98 @@ function buildProjDetail(ticker, key) {
     };
     const rows = [];
     const effectiveAnnual = {}; for (const yr of years) effectiveAnnual[yr] = 0;
-    for (const sen of sortSen(Object.keys(bySenAnnual))) {
-      if (!Object.values(bySenAnnual[sen]).some(v => v > 0)) continue;
-      const included = !isLineExcluded('principalRepayments', sen);
-      if (included) for (const yr of years) effectiveAnnual[yr] += bySenAnnual[sen][yr] || 0;
+    for (const sen of sortSen(Object.keys(bySen))) {
+      if (!Object.values(bySen[sen].annual).some(v => v > 0)) continue;
+      const senExcluded = isLineExcluded('principalRepayments', sen);
+      if (!senExcluded) for (const yr of years) effectiveAnnual[yr] += bySen[sen].annual[yr] || 0;
       rows.push({ parentKey: 'principalRepayments', lineKey: sen,
-        label: senLabels[sen] || sen, values: toCumulative(bySenAnnual[sen]), indent: true });
+        label: senLabels[sen] || sen, values: toCumulative(bySen[sen].annual), indent: true });
+      const sectorEntries = Object.entries(bySen[sen].bySec)
+        .map(([sec, a]) => [sec, a, Object.values(a).reduce((s, v) => s + v, 0)])
+        .filter(([, , tot]) => tot > 0)
+        .sort((a, b) => b[2] - a[2]);
+      for (const [sec, annual] of sectorEntries) {
+        rows.push({ label: '\u21B3 ' + sec, values: toCumulative(annual),
+          indent2: true, dimmed: true, forceExcluded: senExcluded });
+      }
     }
     rows.push({ separator: true });
-    rows.push({ total: true, label: 'Cumulative repayments (post-stress)', values: toCumulative(effectiveAnnual), color: '#2d8a56' });
+    rows.push({ total: true, label: 'Cumulative repayments (surviving share)', values: toCumulative(effectiveAnnual), color: '#2d8a56' });
     h += miniTable(rows);
-    h += srcRow('Source: SOI filings \u2014 par amounts \u00d7 maturity dates');
-    h += noteRow('Click \u2715 to exclude a seniority bucket; \u21BA to restore.');
+    h += srcRow('Source: SOI filings \u2014 par amounts \u00d7 maturity dates, surviving share only, grouped by sector \u00d7 seniority. Defaulted share\u2019s recovery appears in the Defaulted-Loan Recoveries row at the workout-year lump.');
+    h += noteRow('Click \u2715 to exclude a seniority bucket; \u21BA to restore. Exclusion also drops this bucket\u2019s recoveries.');
+    return h;
+  }
+
+  // ── DEFAULTED-LOAN RECOVERIES ─────────────────────────────────────────
+  case 'recoveries': {
+    let h = hdrRow('Defaulted-Loan Recoveries \u2014 By Seniority \u00d7 Sector (Workout-Year Lump)');
+    const rrDec = (liqRecoveryRate || 0) / 100;
+    const firstProjYr = years[0];
+    const workoutYrLocal = firstProjYr + Math.ceil(Math.max(0, liqWorkoutMonths) / 12);
+    // One-time cash inflow that lands in workoutYrLocal; build per-seniority
+    // and per-sector-within-seniority series (zero before workoutYrLocal,
+    // flat after) so the sector mix is visible.
+    const bySen = {};
+    for (const sector in cf.principal_matrix) {
+      const secR = (sectorRates[sector] || 0) / 100;
+      for (const sen in cf.principal_matrix[sector]) {
+        const senR = (seniorityRates[sen] || 0) / 100;
+        const combined = 1 - (1 - senR) * (1 - secR);
+        const { recovery } = decomposeBucketLoss(combined, rrDec);
+        if (!bySen[sen]) {
+          bySen[sen] = { annual: {}, bySec: {} };
+          for (const yr of years) bySen[sen].annual[yr] = 0;
+        }
+        if (!bySen[sen].bySec[sector]) {
+          bySen[sen].bySec[sector] = {};
+          for (const yr of years) bySen[sen].bySec[sector][yr] = 0;
+        }
+        if (recovery <= 0) continue;
+        let defaultedPar = 0;
+        for (const mYr in cf.principal_matrix[sector][sen]) {
+          if (mYr === 'none') continue;
+          if (parseInt(mYr) < firstProjYr) continue;
+          defaultedPar += cf.principal_matrix[sector][sen][mYr] || 0;
+        }
+        const lumpVal = defaultedPar * recovery;
+        for (const yr of years) {
+          if (yr === workoutYrLocal) {
+            bySen[sen].bySec[sector][yr] += lumpVal;
+            bySen[sen].annual[yr] += lumpVal;
+          }
+        }
+      }
+    }
+    const toCumulative = annualByYear => {
+      const out = {}; let run = 0;
+      for (const yr of years) { run += annualByYear[yr] || 0; out[yr] = run; }
+      return out;
+    };
+    const rows = [];
+    const effectiveAnnual = {}; for (const yr of years) effectiveAnnual[yr] = 0;
+    for (const sen of sortSen(Object.keys(bySen))) {
+      if (!Object.values(bySen[sen].annual).some(v => v > 0)) continue;
+      // Recoveries share the parent principalRepayments exclusion state —
+      // excluding 1L principal also excludes 1L recovery (same instruments).
+      const senExcluded = isLineExcluded('principalRepayments', sen);
+      if (!senExcluded) for (const yr of years) effectiveAnnual[yr] += bySen[sen].annual[yr] || 0;
+      rows.push({ parentKey: 'principalRepayments', lineKey: sen,
+        label: senLabels[sen] || sen, values: toCumulative(bySen[sen].annual), indent: true });
+      const sectorEntries = Object.entries(bySen[sen].bySec)
+        .map(([sec, a]) => [sec, a, Object.values(a).reduce((s, v) => s + v, 0)])
+        .filter(([, , tot]) => tot > 0)
+        .sort((a, b) => b[2] - a[2]);
+      for (const [sec, annual] of sectorEntries) {
+        rows.push({ label: '\u21B3 ' + sec, values: toCumulative(annual),
+          indent2: true, dimmed: true, forceExcluded: senExcluded });
+      }
+    }
+    rows.push({ separator: true });
+    rows.push({ total: true, label: 'Cumulative recoveries (workout-year lump)', values: toCumulative(effectiveAnnual), color: '#2d8a56' });
+    h += miniTable(rows);
+    h += srcRow('Defaulted-share par \u00d7 Recovery Given Default, lumped in year ' + workoutYrLocal + ' (workout = ' + liqWorkoutMonths + ' months from horizon start). Permanent loss = combined \u00d7 par stays invariant with the Stress Model tab.');
+    h += noteRow('Adjust Recovery Given Default or Time to Work Out in the Defaults Control above.');
     return h;
   }
 
@@ -136957,7 +137230,7 @@ setTimeout(() => {
 (function() {
   const el = document.createElement('div');
   el.style.cssText = 'position:fixed;bottom:8px;right:12px;font-size:10px;color:#999;z-index:1000;pointer-events:none';
-  const deployTs = 'Apr 16, 2026 12:16 PM ';
+  const deployTs = 'Apr 16, 2026 3:31 PM ';
   if (deployTs.startsWith('__')) {
     el.textContent = 'Local dev';
   } else {
