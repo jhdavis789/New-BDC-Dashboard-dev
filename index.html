@@ -30975,6 +30975,10 @@ const DATA = {
           "amount": 638000000
         },
         {
+          "name": "Xbrl Cash And Cash Equivalents",
+          "amount": 638000000
+        },
+        {
           "name": "Receivable For Open Trades",
           "amount": 317000000
         },
@@ -30987,8 +30991,16 @@ const DATA = {
           "amount": 286000000
         },
         {
+          "name": "Xbrl Restricted Cash",
+          "amount": 286000000
+        },
+        {
           "name": "Other Assets",
           "amount": 221000000
+        },
+        {
+          "name": "Xbrl Foreign Currencies",
+          "amount": 26000000
         }
       ],
       "market_price": 18.97,
@@ -31465,6 +31477,10 @@ const DATA = {
           "amount": 14167499000
         },
         {
+          "name": "Xbrl Cash And Cash Equivalents",
+          "amount": 289605000
+        },
+        {
           "name": "Cash And Cash Equivalents",
           "amount": 200199000
         },
@@ -31474,6 +31490,10 @@ const DATA = {
         },
         {
           "name": "Restricted Cash",
+          "amount": 89406000
+        },
+        {
+          "name": "Xbrl Restricted Cash And Equivalents",
           "amount": 89406000
         },
         {
@@ -32117,6 +32137,10 @@ const DATA = {
         },
         {
           "name": "Cash And Cash Equivalents",
+          "amount": 208000000
+        },
+        {
+          "name": "Xbrl Cash",
           "amount": 181000000
         },
         {
@@ -32132,12 +32156,8 @@ const DATA = {
           "amount": 32000000
         },
         {
-          "name": "Foreign Currency At Fair Value",
+          "name": "Xbrl Foreign Currencies",
           "amount": 27000000
-        },
-        {
-          "name": "Unrealized Appreciation On Foreign Currency Forward Contracts",
-          "amount": 3000000
         }
       ],
       "market_price": 11.12,
@@ -32615,23 +32635,31 @@ const DATA = {
       ],
       "non_inv_detail": [
         {
+          "name": "Cash And Cash Equivalents",
+          "amount": 93969000
+        },
+        {
           "name": "Interest Receivable",
           "amount": 72129000
         },
         {
-          "name": "Cash",
+          "name": "Restricted Cash",
+          "amount": 66573000
+        },
+        {
+          "name": "Xbrl Cash",
           "amount": 58445000
         },
         {
-          "name": "Restricted Cash Equivalents",
+          "name": "Xbrl Restricted Cash Equivalents",
           "amount": 34425000
         },
         {
-          "name": "Restricted Cash",
+          "name": "Xbrl Restricted Cash",
           "amount": 32148000
         },
         {
-          "name": "Cash Equivalents",
+          "name": "Xbrl Cash Equivalents",
           "amount": 25865000
         },
         {
@@ -32639,7 +32667,7 @@ const DATA = {
           "amount": 11110000
         },
         {
-          "name": "Foreign Currencies",
+          "name": "Xbrl Foreign Currencies",
           "amount": 9659000
         },
         {
@@ -33199,8 +33227,12 @@ const DATA = {
           "amount": 2361646000
         },
         {
-          "name": "Cash",
-          "amount": 511255000
+          "name": "Xbrl Cash",
+          "amount": 558703000
+        },
+        {
+          "name": "Cash And Cash Equivalents",
+          "amount": 521094000
         },
         {
           "name": "Non Controlled Affiliated Investments",
@@ -33215,6 +33247,10 @@ const DATA = {
           "amount": 47448000
         },
         {
+          "name": "Xbrl Restricted Cash And Equivalents",
+          "amount": 47448000
+        },
+        {
           "name": "Receivable From A Controlled Affiliate",
           "amount": 26846000
         },
@@ -33223,7 +33259,7 @@ const DATA = {
           "amount": 15508000
         },
         {
-          "name": "Foreign Cash",
+          "name": "Xbrl Foreign Currencies",
           "amount": 9839000
         }
       ],
@@ -33629,7 +33665,7 @@ const DATA = {
       ]
     },
     "FSK": {
-      "cash": 181000000,
+      "cash": 208000000,
       "restricted_cash": 0,
       "debt_instruments": [
         {
@@ -37473,7 +37509,7 @@ const DATA = {
         ]
       },
       "equity": 5849000000,
-      "cash_on_hand": 181000000,
+      "cash_on_hand": 208000000,
       "undrawn_revolvers": 3268000000,
       "unfunded_total": 1448100000,
       "portfolio_avg_rate": 9.45,
@@ -135599,7 +135635,7 @@ setTimeout(() => {
 (function() {
   const el = document.createElement('div');
   el.style.cssText = 'position:fixed;bottom:8px;right:12px;font-size:10px;color:#999;z-index:1000;pointer-events:none';
-  const deployTs = 'Apr 15, 2026 5:51 PM ';
+  const deployTs = 'Apr 15, 2026 7:55 PM ';
   if (deployTs.startsWith('__')) {
     el.textContent = 'Local dev';
   } else {
