@@ -1134,6 +1134,18 @@
       </div>
     </div>
 
+    <!-- Loss by Seniority / Sector charts (mirrors stress tab) -->
+    <div class="chart-row">
+      <div class="chart-box">
+        <div class="chart-header"><h3>Loss by Seniority</h3><div class="unit-toggle" id="liqToggleSeniority"><button class="utog" data-unit="$">$</button><button class="utog active" data-unit="%">%</button></div></div>
+        <div class="chart-wrap"><canvas id="liqChartSeniority"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-header"><h3>Loss by Sector</h3><div class="unit-toggle" id="liqToggleSector"><button class="utog" data-unit="$">$</button><button class="utog active" data-unit="%">%</button></div></div>
+        <div class="chart-wrap"><canvas id="liqChartSector"></canvas></div>
+      </div>
+    </div>
+
     <!-- Liquidity-Specific Assumptions -->
     <div class="controls-panel" style="grid-template-columns:1fr">
       <div class="control-box">
@@ -35723,9 +35735,14 @@ const DATA = {
         "repayment_schedule": {
           "2026": 2150000000,
           "2027": 1400000000,
-          "2028": 1813000000,
-          "2029": 2567000000,
-          "2030": 4012000000
+          "2028": 1250000000,
+          "2029": 1850000000,
+          "2030": 750000000
+        },
+        "revolver_repayment_schedule": {
+          "2030": 3262000000,
+          "2028": 563000000,
+          "2029": 717000000
         },
         "interest_schedule": {
           "2026": 770376000,
@@ -35740,126 +35757,162 @@ const DATA = {
             "maturity_year": 2026,
             "outstanding": 1150000000,
             "annual_interest": 44562500,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "July 2026 Notes",
             "maturity_year": 2026,
             "outstanding": 1000000000,
             "annual_interest": 21500000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "January 2027 Notes",
             "maturity_year": 2027,
             "outstanding": 900000000,
             "annual_interest": 56979000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "June 2027 Notes",
             "maturity_year": 2027,
             "outstanding": 500000000,
             "annual_interest": 14375000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "June 2028 Notes",
             "maturity_year": 2028,
             "outstanding": 1250000000,
             "annual_interest": 35937500,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "March 2029 Notes",
             "maturity_year": 2029,
             "outstanding": 1000000000,
             "annual_interest": 58950000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "July 2029 Notes",
             "maturity_year": 2029,
             "outstanding": 850000000,
             "annual_interest": 45840500,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "September 2030 Notes",
             "maturity_year": 2030,
             "outstanding": 750000000,
             "annual_interest": 42322500,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "January 2031 Notes",
             "maturity_year": 2031,
             "outstanding": 650000000,
             "annual_interest": 33150000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "November 2031 Notes",
             "maturity_year": 2031,
             "outstanding": 700000000,
             "annual_interest": 22400000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "March 2032 Notes",
             "maturity_year": 2032,
             "outstanding": 1000000000,
             "annual_interest": 58000000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "Revolving Credit Facility",
             "maturity_year": 2030,
             "outstanding": 2028000000,
             "annual_interest": 107686800,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": true,
+            "secured": true
           },
           {
             "name": "Revolving Funding Facility",
             "maturity_year": 2030,
             "outstanding": 1234000000,
             "annual_interest": 67376400,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": true,
+            "secured": true
           },
           {
             "name": "SMBC Funding Facility",
             "maturity_year": 2028,
             "outstanding": 563000000,
             "annual_interest": 30739800,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": true,
+            "secured": true
           },
           {
             "name": "BNP Funding Facility",
             "maturity_year": 2029,
             "outstanding": 717000000,
             "annual_interest": 39865200,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": true,
+            "secured": true
           },
           {
             "name": "April 2036 CLO Notes",
             "maturity_year": 2036,
             "outstanding": 476000000,
             "annual_interest": 26275200,
-            "is_clo": true
+            "is_clo": true,
+            "is_revolver": false,
+            "secured": true
           },
           {
             "name": "October 2036 CLO Secured Loans",
             "maturity_year": 2036,
             "outstanding": 544000000,
             "annual_interest": 28505600,
-            "is_clo": true
+            "is_clo": true,
+            "is_revolver": false,
+            "secured": true
           },
           {
             "name": "January 2038 CLO Notes",
             "maturity_year": 2038,
             "outstanding": 700000000,
             "annual_interest": 35910000,
-            "is_clo": true
+            "is_clo": true,
+            "is_revolver": false,
+            "secured": true
           }
         ]
       },
@@ -36430,11 +36483,15 @@ const DATA = {
       },
       "bdc_debt": {
         "repayment_schedule": {
-          "2027": 1658274000,
-          "2029": 2100047000,
-          "2028": 1384800000,
           "2026": 1500000000,
+          "2027": 1050000000,
+          "2028": 1350000000,
           "2030": 500000000
+        },
+        "revolver_repayment_schedule": {
+          "2027": 608274000,
+          "2029": 2100047000,
+          "2028": 34800000
         },
         "interest_schedule": {
           "2026": 382338642,
@@ -36449,98 +36506,126 @@ const DATA = {
             "maturity_year": 2027,
             "outstanding": 22374000,
             "annual_interest": 1350271,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": true,
+            "secured": true
           },
           {
             "name": "Breckenridge Funding Facility",
             "maturity_year": 2029,
             "outstanding": 652550000,
             "annual_interest": 36934330,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": true,
+            "secured": true
           },
           {
             "name": "Big Sky Funding Facility",
             "maturity_year": 2027,
             "outstanding": 585900000,
             "annual_interest": 31111290,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": true,
+            "secured": true
           },
           {
             "name": "BXSL 2025-1 Facility",
             "maturity_year": 2028,
             "outstanding": 34800000,
             "annual_interest": 1847880,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": true,
+            "secured": true
           },
           {
             "name": "Revolving Credit Facility",
             "maturity_year": 2029,
             "outstanding": 1447497000,
             "annual_interest": 62387121,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": true,
+            "secured": true
           },
           {
             "name": "2026 Notes",
             "maturity_year": 2026,
             "outstanding": 800000000,
             "annual_interest": 29000000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "New 2026 Notes",
             "maturity_year": 2026,
             "outstanding": 700000000,
             "annual_interest": 19250000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "2027 Notes",
             "maturity_year": 2027,
             "outstanding": 650000000,
             "annual_interest": 32760000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "2028 Notes",
             "maturity_year": 2028,
             "outstanding": 650000000,
             "annual_interest": 34515000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "November 2027 Notes",
             "maturity_year": 2027,
             "outstanding": 400000000,
             "annual_interest": 20160000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "April 2028 Notes",
             "maturity_year": 2028,
             "outstanding": 700000000,
             "annual_interest": 37170000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "June 2030 Notes",
             "maturity_year": 2030,
             "outstanding": 500000000,
             "annual_interest": 25600000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "January 2031 Notes",
             "maturity_year": 2031,
             "outstanding": 500000000,
             "annual_interest": 26600000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "2024-1 Notes",
             "maturity_year": 2037,
             "outstanding": 457500000,
             "annual_interest": 23652750,
-            "is_clo": true
+            "is_clo": true,
+            "is_revolver": false,
+            "secured": true
           }
         ]
       },
@@ -37449,11 +37534,16 @@ const DATA = {
       },
       "bdc_debt": {
         "repayment_schedule": {
-          "2030": 2517000000,
-          "2026": 1045000000,
-          "2028": 1015000000,
+          "2026": 1000000000,
           "2027": 900000000,
-          "2029": 1000000000
+          "2028": 750000000,
+          "2029": 1000000000,
+          "2030": 700000000
+        },
+        "revolver_repayment_schedule": {
+          "2030": 1817000000,
+          "2026": 45000000,
+          "2028": 265000000
         },
         "interest_schedule": {
           "2026": 381743750,
@@ -37468,98 +37558,126 @@ const DATA = {
             "maturity_year": 2030,
             "outstanding": 284000000,
             "annual_interest": 15364400,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": true,
+            "secured": true
           },
           {
             "name": "CCT Tokyo Funding Credit Facility",
             "maturity_year": 2026,
             "outstanding": 45000000,
             "annual_interest": 2535750,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": true,
+            "secured": true
           },
           {
             "name": "Meadowbrook Run Credit Facility",
             "maturity_year": 2028,
             "outstanding": 265000000,
             "annual_interest": 14866500,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": true,
+            "secured": true
           },
           {
             "name": "Senior Secured Revolving Credit Facility",
             "maturity_year": 2030,
             "outstanding": 1533000000,
             "annual_interest": 83931750,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": true,
+            "secured": true
           },
           {
             "name": "3.400% Notes due 2026",
             "maturity_year": 2026,
             "outstanding": 1000000000,
             "annual_interest": 34000000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "2.625% Notes due 2027",
             "maturity_year": 2027,
             "outstanding": 400000000,
             "annual_interest": 10520000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "3.250% Notes due 2027",
             "maturity_year": 2027,
             "outstanding": 500000000,
             "annual_interest": 16250000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "3.125% Notes due 2028",
             "maturity_year": 2028,
             "outstanding": 750000000,
             "annual_interest": 23475000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "7.875% Notes due 2029",
             "maturity_year": 2029,
             "outstanding": 400000000,
             "annual_interest": 31520000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "6.875% Notes due 2029",
             "maturity_year": 2029,
             "outstanding": 600000000,
             "annual_interest": 41280000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "6.125% Notes due 2030",
             "maturity_year": 2030,
             "outstanding": 700000000,
             "annual_interest": 42910000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "6.125% Notes due 2031",
             "maturity_year": 2031,
             "outstanding": 400000000,
             "annual_interest": 24520000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "CLO-2 Notes",
             "maturity_year": 2037,
             "outstanding": 380000000,
             "annual_interest": 20805000,
-            "is_clo": true
+            "is_clo": true,
+            "is_revolver": false,
+            "secured": true
           },
           {
             "name": "CLO-3 Notes",
             "maturity_year": 2038,
             "outstanding": 363000000,
             "annual_interest": 19765350,
-            "is_clo": true
+            "is_clo": true,
+            "is_revolver": false,
+            "secured": true
           }
         ]
       },
@@ -38728,11 +38846,13 @@ const DATA = {
       },
       "bdc_debt": {
         "repayment_schedule": {
-          "2030": 1115726000,
           "2026": 599658000,
           "2027": 349177000,
           "2028": 719100000,
           "2029": 755415000
+        },
+        "revolver_repayment_schedule": {
+          "2030": 1115726000
         },
         "interest_schedule": {
           "2026": 248616879,
@@ -38747,49 +38867,63 @@ const DATA = {
             "maturity_year": 2036,
             "outstanding": 1364000000,
             "annual_interest": 71200800,
-            "is_clo": true
+            "is_clo": true,
+            "is_revolver": false,
+            "secured": true
           },
           {
             "name": "JPM Credit Facility",
             "maturity_year": 2030,
             "outstanding": 1115726000,
             "annual_interest": 59245051,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": true,
+            "secured": true
           },
           {
             "name": "Adviser Revolver",
             "maturity_year": 2032,
             "outstanding": 0,
             "annual_interest": 0,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": true,
+            "secured": false
           },
           {
             "name": "2026 Notes",
             "maturity_year": 2026,
             "outstanding": 599658000,
             "annual_interest": 14991450,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "2027 Notes",
             "maturity_year": 2027,
             "outstanding": 349177000,
             "annual_interest": 7158128,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "2028 Notes",
             "maturity_year": 2028,
             "outstanding": 719100000,
             "annual_interest": 50696550,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "2029 Notes",
             "maturity_year": 2029,
             "outstanding": 755415000,
             "annual_interest": 45324900,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           }
         ]
       },
@@ -39790,11 +39924,14 @@ const DATA = {
       },
       "bdc_debt": {
         "repayment_schedule": {
-          "2029": 2012000000,
           "2026": 1500000000,
           "2027": 1075000000,
           "2028": 950000000,
+          "2029": 1000000000,
           "2030": 500000000
+        },
+        "revolver_repayment_schedule": {
+          "2029": 1012000000
         },
         "interest_schedule": {
           "2026": 485610411,
@@ -39809,147 +39946,189 @@ const DATA = {
             "maturity_year": 2029,
             "outstanding": 1012000000,
             "annual_interest": 55002200,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": true,
+            "secured": true
           },
           {
             "name": "SPV Asset Facility II",
             "maturity_year": 2036,
             "outstanding": 161700000,
             "annual_interest": 9071370,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": true,
+            "secured": true
           },
           {
             "name": "SPV Asset Facility V",
             "maturity_year": null,
             "outstanding": 384000000,
             "annual_interest": 21350400,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": true,
+            "secured": true
           },
           {
             "name": "SPV Asset Facility VI",
             "maturity_year": null,
             "outstanding": 300000000,
             "annual_interest": 16080000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": true,
+            "secured": true
           },
           {
             "name": "SPV Asset Facility VII",
             "maturity_year": null,
             "outstanding": 210000000,
             "annual_interest": 11361000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": true,
+            "secured": true
           },
           {
             "name": "CLO I",
             "maturity_year": 2036,
             "outstanding": 390000000,
             "annual_interest": 21294000,
-            "is_clo": true
+            "is_clo": true,
+            "is_revolver": false,
+            "secured": true
           },
           {
             "name": "CLO III",
             "maturity_year": 2036,
             "outstanding": 260000000,
             "annual_interest": 14196000,
-            "is_clo": true
+            "is_clo": true,
+            "is_revolver": false,
+            "secured": true
           },
           {
             "name": "CLO IV",
             "maturity_year": 2029,
             "outstanding": 275463000,
             "annual_interest": 14489354,
-            "is_clo": true
+            "is_clo": true,
+            "is_revolver": false,
+            "secured": true
           },
           {
             "name": "CLO V",
             "maturity_year": 2034,
             "outstanding": 509625000,
             "annual_interest": 26041838,
-            "is_clo": true
+            "is_clo": true,
+            "is_revolver": false,
+            "secured": true
           },
           {
             "name": "CLO VII",
             "maturity_year": 2038,
             "outstanding": 330500000,
             "annual_interest": 19036800,
-            "is_clo": true
+            "is_clo": true,
+            "is_revolver": false,
+            "secured": true
           },
           {
             "name": "CLO X",
             "maturity_year": 2037,
             "outstanding": 272000000,
             "annual_interest": 24915200,
-            "is_clo": true
+            "is_clo": true,
+            "is_revolver": false,
+            "secured": true
           },
           {
             "name": "CLO XIV",
             "maturity_year": 2035,
             "outstanding": 260000000,
             "annual_interest": 23816000,
-            "is_clo": true
+            "is_clo": true,
+            "is_revolver": false,
+            "secured": true
           },
           {
             "name": "2026 Notes",
             "maturity_year": 2026,
             "outstanding": 500000000,
             "annual_interest": 45800000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "July 2026 Notes",
             "maturity_year": 2026,
             "outstanding": 1000000000,
             "annual_interest": 34000000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "2027 Notes",
             "maturity_year": 2027,
             "outstanding": 500000000,
             "annual_interest": 13125000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "April 2027 Notes",
             "maturity_year": 2027,
             "outstanding": 325000000,
             "annual_interest": 10156250,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "July 2027 Notes",
             "maturity_year": 2027,
             "outstanding": 250000000,
             "annual_interest": 7812500,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "2028 Notes",
             "maturity_year": 2028,
             "outstanding": 850000000,
             "annual_interest": 24437500,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "June 2028 Notes",
             "maturity_year": 2028,
             "outstanding": 100000000,
             "annual_interest": 3125000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "2029 Notes",
             "maturity_year": 2029,
             "outstanding": 1000000000,
             "annual_interest": 59500000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           },
           {
             "name": "2030 Notes",
             "maturity_year": 2030,
             "outstanding": 500000000,
             "annual_interest": 31000000,
-            "is_clo": false
+            "is_clo": false,
+            "is_revolver": false,
+            "secured": false
           }
         ]
       },
@@ -131442,7 +131621,7 @@ function applyPreset(name) {
 
 function css(s) { return s.replace(/[^a-zA-Z0-9]/g, '_'); }
 function clearAllPresetActive() {
-  clearAllPresetActive();
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active-preset'));
   document.querySelectorAll('.historical-btn').forEach(b => b.classList.remove('active-preset'));
 }
 
@@ -131740,6 +131919,7 @@ function buildSliders() {
   if (liqMatInput) {
     liqMatInput.addEventListener('input', () => {
       maturityHorizonYears = parseFloat(liqMatInput.value) || 0;
+      clearAllPresetActive();
       syncSliderUI();
       recalculate();
     });
@@ -132152,6 +132332,77 @@ function updateSectorChart(lossBySector, fvBySector) {
   } else {
     sectorChart = new Chart(canvas, config);
   }
+}
+
+// ======== LIQUIDITY TAB LOSS CHARTS ========
+let liqSeniorityChart = null;
+let liqSectorChart = null;
+let liqSeniorityUnit = '%';
+let liqSectorUnit = '%';
+
+function updateLiqSeniorityChart(lossBySeniority, fvBySeniority) {
+  const canvas = document.getElementById('liqChartSeniority');
+  if (!canvas) return;
+  const types = ACTIVE_SENIORITY.filter(s => fvBySeniority[s] > 0);
+  const colors = types.map(s => SENIORITY_COLORS[s] || '#999');
+  const isPct = liqSeniorityUnit === '%';
+  const fvData = isPct ? types.map(() => 100) : types.map(s => (fvBySeniority[s] || 0) / 1e6);
+  const lossData = isPct
+    ? types.map(s => { const fv = fvBySeniority[s] || 1; return ((lossBySeniority[s] || 0) / fv) * 100; })
+    : types.map(s => (lossBySeniority[s] || 0) / 1e6);
+  const config = {
+    type: 'bar',
+    data: { labels: types, datasets: isPct ? [
+      { label: 'Loss % of Tier FV', data: lossData, backgroundColor: colors.map(c => c + 'cc'), borderColor: colors, borderWidth: 1 }
+    ] : [
+      { label: 'Fair Value ($M)', data: fvData, backgroundColor: colors.map(c => c + '44'), borderColor: colors, borderWidth: 1 },
+      { label: 'Est. Loss ($M)', data: lossData, backgroundColor: colors.map(c => c + 'cc'), borderColor: colors, borderWidth: 1 }
+    ]},
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { position: 'top', labels: { color: '#555', font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => isPct ? ctx.dataset.label + ': ' + ctx.parsed.x.toFixed(1) + '%' : ctx.dataset.label + ': $' + ctx.parsed.x.toFixed(0) + 'M' } } },
+      scales: {
+        x: { max: isPct ? 100 : undefined, ticks: { color: '#666', callback: v => isPct ? v + '%' : '$' + v.toLocaleString() + 'M' }, grid: { color: '#eee' } },
+        y: { ticks: { color: '#555', font: { size: 11 } }, grid: { display: false } }
+      }
+    }
+  };
+  if (liqSeniorityChart) { liqSeniorityChart.data = config.data; liqSeniorityChart.options = config.options; liqSeniorityChart.update('none'); }
+  else { liqSeniorityChart = new Chart(canvas, config); }
+}
+
+function updateLiqSectorChart(lossBySector, fvBySector) {
+  const canvas = document.getElementById('liqChartSector');
+  if (!canvas) return;
+  const secs = DATA.sectors.filter(s => fvBySector[s] > 0);
+  const colors = secs.map(s => SECTOR_COLORS[s] || '#999');
+  const shortLabels = secs.map(s => s.length > 16 ? s.substring(0, 14) + '...' : s);
+  const isPct = liqSectorUnit === '%';
+  const fvData = isPct ? secs.map(() => 100) : secs.map(s => (fvBySector[s] || 0) / 1e6);
+  const lossData = isPct
+    ? secs.map(s => { const fv = fvBySector[s] || 1; return ((lossBySector[s] || 0) / fv) * 100; })
+    : secs.map(s => (lossBySector[s] || 0) / 1e6);
+  const config = {
+    type: 'bar',
+    data: { labels: shortLabels, datasets: isPct ? [
+      { label: 'Loss % of Sector FV', data: lossData, backgroundColor: colors.map(c => c + 'cc'), borderColor: colors, borderWidth: 1 }
+    ] : [
+      { label: 'Fair Value ($M)', data: fvData, backgroundColor: colors.map(c => c + '44'), borderColor: colors, borderWidth: 1 },
+      { label: 'Est. Loss ($M)', data: lossData, backgroundColor: colors.map(c => c + 'cc'), borderColor: colors, borderWidth: 1 }
+    ]},
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { position: 'top', labels: { color: '#555', font: { size: 11 } } },
+        tooltip: { callbacks: { title: items => secs[items[0].dataIndex], label: ctx => isPct ? ctx.dataset.label + ': ' + ctx.parsed.x.toFixed(1) + '%' : ctx.dataset.label + ': $' + ctx.parsed.x.toFixed(0) + 'M' } } },
+      scales: {
+        x: { max: isPct ? 100 : undefined, ticks: { color: '#666', callback: v => isPct ? v + '%' : '$' + v.toLocaleString() + 'M' }, grid: { color: '#eee' } },
+        y: { ticks: { color: '#555', font: { size: 10 } }, grid: { display: false } }
+      }
+    }
+  };
+  if (liqSectorChart) { liqSectorChart.data = config.data; liqSectorChart.options = config.options; liqSectorChart.update('none'); }
+  else { liqSectorChart = new Chart(canvas, config); }
 }
 
 // ======== HEATMAP TABLE ========
@@ -133378,6 +133629,22 @@ document.getElementById('toggleSector').addEventListener('click', e => {
   updateSectorChart(_lastLossBySector, _lastFvBySector);
 });
 
+document.getElementById('liqToggleSeniority').addEventListener('click', e => {
+  if (!e.target.dataset.unit) return;
+  liqSeniorityUnit = e.target.dataset.unit;
+  document.querySelectorAll('#liqToggleSeniority .utog').forEach(b => b.classList.toggle('active', b.dataset.unit === liqSeniorityUnit));
+  if (liqSeniorityChart) { liqSeniorityChart.destroy(); liqSeniorityChart = null; }
+  updateLiqSeniorityChart(_lastLossBySeniority, _lastFvBySeniority);
+});
+
+document.getElementById('liqToggleSector').addEventListener('click', e => {
+  if (!e.target.dataset.unit) return;
+  liqSectorUnit = e.target.dataset.unit;
+  document.querySelectorAll('#liqToggleSector .utog').forEach(b => b.classList.toggle('active', b.dataset.unit === liqSectorUnit));
+  if (liqSectorChart) { liqSectorChart.destroy(); liqSectorChart = null; }
+  updateLiqSectorChart(_lastLossBySector, _lastFvBySector);
+});
+
 document.getElementById('toggleCashOther').addEventListener('click', e => {
   if (!e.target.dataset.mode) return;
   stacksIncludeCash = e.target.dataset.mode === 'include';
@@ -133414,12 +133681,16 @@ document.getElementById('naCompanyToggle').addEventListener('change', e => {
 
 document.getElementById('maturityInput').addEventListener('input', e => {
   maturityHorizonYears = parseFloat(e.target.value) || 0;
+  clearAllPresetActive();
+  syncSliderUI();
   if (_fullTimer) clearTimeout(_fullTimer);
   _fullTimer = setTimeout(() => { _fullTimer = null; recalculate(); }, 400);
 });
 
 document.getElementById('maturityInput').addEventListener('change', () => {
   maturityHorizonYears = parseFloat(document.getElementById('maturityInput').value) || 0;
+  clearAllPresetActive();
+  syncSliderUI();
   if (_fullTimer) clearTimeout(_fullTimer);
   _fullTimer = null;
   recalculate();
@@ -133764,6 +134035,8 @@ function refreshAll() {
     recalculate();
     renderBondMarket();
   } else if (selectedView === 'liquidity') {
+    if (liqSeniorityChart) { liqSeniorityChart.destroy(); liqSeniorityChart = null; }
+    if (liqSectorChart) { liqSectorChart.destroy(); liqSectorChart = null; }
     renderLiquidityTab();
   } else if (selectedView === 'positions') {
     renderPositionsTab();
@@ -133916,6 +134189,12 @@ function renderLiquidityTab() {
   }
 
   _lastLiqResults = liqResults;
+
+  // Loss charts (seniority & sector) — reuse stress data
+  if (c) {
+    updateLiqSeniorityChart(c.lossBySeniority, c.fvBySeniority);
+    updateLiqSectorChart(c.lossBySector, c.fvBySector);
+  }
 
   // Chart 1: Debt Maturity Wall
   renderMaturityWall(tickers);
@@ -134389,6 +134668,7 @@ function computeCashFlowProjection(ticker) {
     // === OUTFLOWS ===
     const dividend = postStressEquity * (liqDividendRate / 100) * 4;
     const debtRepayment = cf.bdc_debt.repayment_schedule[String(yr)] || 0;
+    const revolverRepayment = (cf.bdc_debt.revolver_repayment_schedule || {})[String(yr)] || 0;
     const debtInterest = cf.bdc_debt.interest_schedule[String(yr)] || 0;
     const unfundedDraw = (yr === years[0])
       ? cf.unfunded_total * (liqDrawRate / 100) : 0;
@@ -134396,7 +134676,7 @@ function computeCashFlowProjection(ticker) {
     return {
       year: yr,
       inflows: { cashInterest, principalRepayments, cashOnHand, revolverCapacity },
-      outflows: { dividend, debtRepayment, debtInterest, unfundedDraw },
+      outflows: { dividend, debtRepayment, revolverRepayment, debtInterest, unfundedDraw },
       pikInterest,
     };
   });
@@ -134404,7 +134684,7 @@ function computeCashFlowProjection(ticker) {
   // Build cumulative
   const cumulative = [];
   let cumIn = { cashInterest: 0, principalRepayments: 0, cashOnHand: 0, revolverCapacity: 0 };
-  let cumOut = { dividend: 0, debtRepayment: 0, debtInterest: 0, unfundedDraw: 0 };
+  let cumOut = { dividend: 0, debtRepayment: 0, revolverRepayment: 0, debtInterest: 0, unfundedDraw: 0 };
 
   for (const yr of incremental) {
     for (const k in cumIn) cumIn[k] += yr.inflows[k];
@@ -134438,7 +134718,7 @@ function computeCashFlowProjection(ticker) {
         secInterest += inst.annual_interest || 0;
       }
     }
-    cumSecuredOut += secRepay + secInterest + yr.outflows.dividend + yr.outflows.unfundedDraw;
+    cumSecuredOut += secRepay + secInterest + yr.outflows.revolverRepayment + yr.outflows.dividend + yr.outflows.unfundedDraw;
 
     const securedCov = cumSecuredOut > 0 ? (c.totalInflow / cumSecuredOut) * 100 : null;
     const totalCov = c.totalOutflow > 0 ? (c.totalInflow / c.totalOutflow) * 100 : null;
@@ -134515,9 +134795,13 @@ function renderLiquidityProjection(ticker) {
           data: projection.cumulative.map(c => c.outflows.dividend / 1e9),
           backgroundColor: '#AD5A6B', borderColor: '#9A4D5E', borderWidth: 1,
           stack: 'outflows', categoryPercentage: 0.72, barPercentage: 0.92 },
-        { label: 'Debt Repayment (ex-CLO)',
+        { label: 'Note Repayment',
           data: projection.cumulative.map(c => c.outflows.debtRepayment / 1e9),
           backgroundColor: '#C97B84', borderColor: '#B56D76', borderWidth: 1,
+          stack: 'outflows', categoryPercentage: 0.72, barPercentage: 0.92 },
+        { label: 'Revolver/Facility Repayment',
+          data: projection.cumulative.map(c => c.outflows.revolverRepayment / 1e9),
+          backgroundColor: '#D4918A', borderColor: '#C07F78', borderWidth: 1,
           stack: 'outflows', categoryPercentage: 0.72, barPercentage: 0.92 },
         { label: 'Debt Interest Expense',
           data: projection.cumulative.map(c => c.outflows.debtInterest / 1e9),
@@ -134586,7 +134870,7 @@ function renderLiquidityProjection(ticker) {
         html += '<div style="flex:1;min-width:220px">';
         html += '<div style="font-weight:700;color:#c0392b;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px"><span style="display:inline-block;width:8px;height:8px;background:#C97B84;border-radius:2px;margin-right:6px;vertical-align:middle"></span>Cumulative Outflows</div>';
         html += '<table style="width:100%;border-collapse:collapse;font-size:12px">';
-        const outKeys = [['dividend','Dividends'],['debtRepayment','Debt Repayment'],['debtInterest','Debt Interest'],['unfundedDraw','Unfunded Draws']];
+        const outKeys = [['dividend','Dividends'],['debtRepayment','Note Repayment'],['revolverRepayment','Revolver/Facility Repayment'],['debtInterest','Debt Interest'],['unfundedDraw','Unfunded Draws']];
         for (const [k,l] of outKeys) {
           const v = c.outflows[k];
           html += '<tr style="border-bottom:1px solid #eee"><td style="padding:5px 8px;color:#666">' + l + '</td><td style="padding:5px 8px;text-align:right;color:' + (v > 0 ? '#a33' : '#999') + '">' + (v > 0 ? '(' + fD(v) + ')' : fD(v)) + '</td></tr>';
@@ -134764,7 +135048,8 @@ function renderProjectionTable(ticker, projection) {
   // Outflows section
   const outflowKeys = [
     ['dividend', 'Dividends (' + liqDividendRate + '%/qtr equity)'],
-    ['debtRepayment', 'Debt Repayment (ex-CLO)'],
+    ['debtRepayment', 'Note Repayment (ex-CLO)'],
+    ['revolverRepayment', 'Revolver/Facility Repayment'],
     ['debtInterest', 'Debt Interest Expense'],
     ['unfundedDraw', 'Unfunded Draws'],
   ];
