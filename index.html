@@ -134351,7 +134351,10 @@ function buildLiqDetail(ticker, column) {
 
   const LABELS = {
     cash: 'Cash', cash_and_cash_equivalents: 'Cash & equivalents',
-    cash_equivalents: 'Cash equivalents', foreign_currencies: 'Foreign currencies',
+    cash_equivalents: 'Cash equivalents',
+    foreign_currencies: 'Foreign-denominated cash',
+    foreign_cash: 'Foreign-denominated cash',
+    foreign_currency_at_fair_value: 'Foreign currency (at FV)',
     restricted_cash: 'Restricted cash', restricted_cash_equivalents: 'Restricted cash equivalents',
     restricted_cash_and_equivalents: 'Restricted cash & equivalents',
   };
@@ -134360,7 +134363,8 @@ function buildLiqDetail(ticker, column) {
     let h = '';
     const cd = liq.cash_detail || {};
     // Unrestricted components
-    const unrestrictedKeys = ['cash', 'cash_and_cash_equivalents', 'cash_equivalents', 'foreign_currencies'];
+    const unrestrictedKeys = ['cash', 'cash_and_cash_equivalents', 'cash_equivalents',
+      'foreign_currencies', 'foreign_cash', 'foreign_currency_at_fair_value'];
     const restrictedKeys = ['restricted_cash', 'restricted_cash_equivalents', 'restricted_cash_and_equivalents'];
     let hasDetail = Object.keys(cd).length > 0;
     if (hasDetail) {
@@ -136514,7 +136518,7 @@ setTimeout(() => {
 (function() {
   const el = document.createElement('div');
   el.style.cssText = 'position:fixed;bottom:8px;right:12px;font-size:10px;color:#999;z-index:1000;pointer-events:none';
-  const deployTs = 'Apr 16, 2026 9:48 AM ';
+  const deployTs = 'Apr 16, 2026 9:49 AM ';
   if (deployTs.startsWith('__')) {
     el.textContent = 'Local dev';
   } else {
