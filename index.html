@@ -1192,7 +1192,6 @@
               <p style="font-size:11px;color:#888;margin:3px 0 0">
                 <span style="display:inline-block;width:10px;height:10px;background:#C97B84;border-radius:2px;vertical-align:middle;margin-right:3px"></span>Left = cash needs
                 <span style="display:inline-block;width:10px;height:10px;background:#7CAE7A;border-radius:2px;vertical-align:middle;margin:0 3px 0 12px"></span>Right = cash available
-                <span style="display:inline-block;width:14px;height:2px;border-top:2px dashed #666;vertical-align:middle;margin:0 3px 0 12px"></span>Net position
               </p>
             </div>
             <span id="liqProjectionRateCoverage" style="font-size:11px"></span>
@@ -134573,59 +134572,7 @@ function renderLiquidityProjection(ticker) {
         },
       },
     },
-    plugins: [{
-      id: 'netPositionLine',
-      afterDatasetsDraw(chart) {
-        const ctx = chart.ctx;
-        const xAxis = chart.scales.x;
-        const yAxis = chart.scales.y;
-        const points = projection.cumulative.map((c, i) => ({
-          x: xAxis.getPixelForValue(i),
-          y: yAxis.getPixelForValue((c.totalInflow - c.totalOutflow) / 1e9),
-          net: (c.totalInflow - c.totalOutflow) / 1e9,
-        }));
-
-        ctx.save();
-        // Line
-        ctx.strokeStyle = '#2c3e50';
-        ctx.lineWidth = 2.5;
-        ctx.setLineDash([5, 4]);
-        ctx.beginPath();
-        points.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
-        ctx.stroke();
-
-        // Dots with halos
-        points.forEach(p => {
-          const color = p.net >= 0 ? '#27ae60' : '#c0392b';
-          // Halo
-          ctx.fillStyle = color + '22';
-          ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, 2 * Math.PI); ctx.fill();
-          // Dot
-          ctx.fillStyle = '#fff';
-          ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, 2 * Math.PI); ctx.fill();
-          ctx.fillStyle = color;
-          ctx.beginPath(); ctx.arc(p.x, p.y, 3.5, 0, 2 * Math.PI); ctx.fill();
-        });
-
-        // End label
-        const last = points[points.length - 1];
-        const labelText = (last.net >= 0 ? '+' : '') + '$' + last.net.toFixed(1) + 'B net';
-        ctx.font = '600 11px -apple-system, BlinkMacSystemFont, sans-serif';
-        ctx.textAlign = 'left';
-        // Label background pill
-        const tm = ctx.measureText(labelText);
-        const lx = last.x + 10;
-        const ly = last.y;
-        ctx.fillStyle = last.net >= 0 ? '#27ae60' : '#c0392b';
-        const pillH = 18, pillR = 4;
-        ctx.beginPath();
-        ctx.roundRect(lx - 4, ly - pillH / 2, tm.width + 8, pillH, pillR);
-        ctx.fill();
-        ctx.fillStyle = '#fff';
-        ctx.fillText(labelText, lx, ly + 4);
-        ctx.restore();
-      },
-    }],
+    plugins: [],
   };
 
   liqProjectionChart = new Chart(canvas, config);
