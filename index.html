@@ -1139,10 +1139,13 @@
         <h3>Liquidity Assumptions</h3>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
           <div>
-            <div class="slider-row"><span class="slider-label">Unfunded Draw Rate <span class="info-btn" data-info="liqDraw" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="100" value="15" id="liq-draw-r"><input type="number" min="0" max="100" value="15" id="liq-draw-n"><span class="pct-suffix">%</span></div>
+            <div class="slider-row"><span class="slider-label">Borrower-Drawable Draw Rate <span class="info-btn" data-info="liqDraw" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="100" value="15" id="liq-draw-r"><input type="number" min="0" max="100" value="15" id="liq-draw-n"><span class="pct-suffix">%</span></div>
+            <div class="slider-row"><span class="slider-label">BDC-Contingent Draw Rate <span class="info-btn" data-info="liqContingent" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="100" value="10" id="liq-contingent-r"><input type="number" min="0" max="100" value="10" id="liq-contingent-n"><span class="pct-suffix">%</span></div>
             <div class="info-popup" data-popup="liqDraw" style="display:none">
-              <p><strong>Unfunded Draw Rate</strong> — % of total unfunded commitments (revolvers, delayed draw term loans, equity commitments) assumed to be drawn by borrowers during stress.</p>
-              <p>In a downturn, distressed borrowers draw down credit lines, forcing the BDC to fund new loans at par into a declining portfolio. Higher draw rates mean more cash outflow and larger balance sheet expansion at the worst time.</p>
+              <p><strong>Borrower-Drawable Unfunded</strong> — % of revolver and delayed-draw term-loan commitments assumed to be drawn by borrowers during stress. In a downturn, distressed borrowers max out credit lines, forcing the BDC to fund new loans at par into a declining portfolio.</p>
+            </div>
+            <div class="info-popup" data-popup="liqContingent" style="display:none">
+              <p><strong>BDC-Contingent Unfunded</strong> — % of BDC-controlled equity or JV commitments (SDLP, COPJV, portfolio-company equity) assumed to be funded. These are not borrower-initiated draws — the BDC typically funds these only when deals close or JV capital calls occur. Default 10% reflects that contingent events are materially less likely than borrower-driven revolver draws.</p>
             </div>
           </div>
           <div>
@@ -131547,10 +131550,12 @@ function applyPreset(name) {
     liqDrawRate = LIQ_DEFAULTS.draw;
     liqForcedSale = LIQ_DEFAULTS.sale;
     liqDividendRate = LIQ_DEFAULTS.div;
+    liqContingentRate = LIQ_DEFAULTS.contingent;
   } else if (p.liquidity) {
     if (p.liquidity.draw != null) liqDrawRate = p.liquidity.draw;
     if (p.liquidity.sale != null) liqForcedSale = p.liquidity.sale;
     if (p.liquidity.div != null) liqDividendRate = p.liquidity.div;
+    if (p.liquidity.contingent != null) liqContingentRate = p.liquidity.contingent;
   }
   document.getElementById('liq-draw-r').value = liqDrawRate;
   document.getElementById('liq-draw-n').value = liqDrawRate;
@@ -131558,6 +131563,10 @@ function applyPreset(name) {
   document.getElementById('liq-sale-n').value = liqForcedSale;
   document.getElementById('liq-div-r').value = liqDividendRate;
   document.getElementById('liq-div-n').value = liqDividendRate;
+  const cr = document.getElementById('liq-contingent-r');
+  const cn = document.getElementById('liq-contingent-n');
+  if (cr) cr.value = liqContingentRate;
+  if (cn) cn.value = liqContingentRate;
   syncSliderUI();
   recalculate();
   if (selectedView === 'liquidity') renderLiquidityTab();
@@ -133987,11 +133996,12 @@ function refreshAll() {
 }
 
 // ======== LIQUIDITY TAB ========
-const LIQ_DEFAULTS = { draw: 15, sale: 0, div: 5 };
+const LIQ_DEFAULTS = { draw: 15, sale: 0, div: 5, contingent: 10 };
 let liqDrawRate = LIQ_DEFAULTS.draw;
 let liqRevolverRisk = 0; // adjustable via projection detail gear
 let liqForcedSale = LIQ_DEFAULTS.sale;
 let liqDividendRate = LIQ_DEFAULTS.div;
+let liqContingentRate = LIQ_DEFAULTS.contingent;
 let liqProjectionChart = null;
 let _maturityInstruments = {};
 let _lastLiqResults = {};
@@ -134004,8 +134014,14 @@ function showLiqModal(title, bodyHtml) {
   modal.style.display = 'flex';
 }
 
-['draw', 'sale', 'div'].forEach(key => {
-  const ids = key === 'draw' ? ['liq-draw-r', 'liq-draw-n'] : key === 'div' ? ['liq-div-r', 'liq-div-n'] : ['liq-sale-r', 'liq-sale-n'];
+['draw', 'sale', 'div', 'contingent'].forEach(key => {
+  const idMap = {
+    draw: ['liq-draw-r', 'liq-draw-n'],
+    div: ['liq-div-r', 'liq-div-n'],
+    sale: ['liq-sale-r', 'liq-sale-n'],
+    contingent: ['liq-contingent-r', 'liq-contingent-n'],
+  };
+  const ids = idMap[key];
   const maxVal = key === 'sale' ? 50 : key === 'div' ? 20 : 100;
   ids.forEach(id => {
     const el = document.getElementById(id);
@@ -134014,6 +134030,7 @@ function showLiqModal(title, bodyHtml) {
       const v = Math.min(maxVal, Math.max(0, parseFloat(el.value) || 0));
       if (key === 'draw') liqDrawRate = v;
       else if (key === 'div') liqDividendRate = v;
+      else if (key === 'contingent') liqContingentRate = v;
       else liqForcedSale = v;
       document.getElementById(ids[0]).value = v;
       document.getElementById(ids[1]).value = v;
@@ -134613,8 +134630,15 @@ function computeCashFlowProjection(ticker) {
     const debtRepayment = cf.bdc_debt.repayment_schedule[String(yr)] || 0;
     const revolverRepayment = (cf.bdc_debt.revolver_repayment_schedule || {})[String(yr)] || 0;
     const debtInterest = cf.bdc_debt.interest_schedule[String(yr)] || 0;
+    // Borrower-drawable (revolvers, delayed-draw term loans) vs.
+    // BDC-contingent (equity, JV) commitments get separate draw rates.
+    // Fall back to the total when the classification isn't populated.
+    const unfundedBorrower = (cf.unfunded_borrower_drawable != null)
+      ? cf.unfunded_borrower_drawable : cf.unfunded_total;
+    const unfundedContingent = cf.unfunded_bdc_contingent || 0;
     const unfundedDraw = (yr === years[0])
-      ? cf.unfunded_total * (liqDrawRate / 100) : 0;
+      ? unfundedBorrower * (liqDrawRate / 100) + unfundedContingent * (liqContingentRate / 100)
+      : 0;
 
     return {
       year: yr,
@@ -135395,16 +135419,26 @@ function buildProjDetail(ticker, key) {
     const notes = instruments.filter(i => !i.is_clo && !i.is_revolver);
     const liqByName = {};
     for (const d of (liq.debt_instruments || [])) liqByName[d.name] = d;
-    const rows = [], beyondWindow = [];
+    const rows = [], beyondWindow = [], repaidList = [];
     for (const note of notes) {
-      if (!note.maturity_year) continue;
-      if (note.maturity_year > years[years.length - 1]) { beyondWindow.push(note); continue; }
-      // Cumulative: once the note matures, its repayment persists in every
-      // subsequent column.
-      const vals = {};
-      for (const yr of years) vals[yr] = yr >= note.maturity_year ? note.outstanding : 0;
+      if (note.repaid) { repaidList.push(note); continue; }
       const li = liqByName[note.name];
       const rateStr = li && li.interest_rate ? li.interest_rate : '';
+      // Tranched maturity (rare for unsecured notes but honor the schema).
+      if (note.maturity_schedule && note.maturity_schedule.length > 0) {
+        for (const tr of note.maturity_schedule) {
+          const tyr = tr.maturity_year;
+          if (!tyr || tyr > years[years.length - 1]) continue;
+          const vals = {}; for (const yr of years) vals[yr] = yr >= tyr ? (tr.outstanding_dollars || 0) : 0;
+          rows.push({ label: note.name + ' tranche', values: vals, indent: true,
+            note: (tr.interest_rate || rateStr) + ' \u00b7 ' + (tr.maturity_date || tyr) });
+        }
+        continue;
+      }
+      if (!note.maturity_year) continue;
+      if (note.maturity_year > years[years.length - 1]) { beyondWindow.push(note); continue; }
+      const vals = {};
+      for (const yr of years) vals[yr] = yr >= note.maturity_year ? note.outstanding : 0;
       const matStr = li && li.maturity_date ? li.maturity_date : String(note.maturity_year);
       rows.push({ label: note.name, values: vals, indent: true, note: rateStr ? rateStr + ' \u00b7 ' + matStr : matStr });
     }
@@ -135418,6 +135452,10 @@ function buildProjDetail(ticker, key) {
       const beyondList = beyondWindow.map(n => { const li = liqByName[n.name]; return n.name + ' (' + fmtDollar(n.outstanding) + (li && li.maturity_date ? ', ' + li.maturity_date : '') + ')'; }).join(', ');
       h += srcRow('Beyond ' + years[years.length - 1] + ': ' + beyondList);
     }
+    if (repaidList.length > 0) {
+      const repaidStr = repaidList.map(n => n.name + ' (' + fmtDollar(n.outstanding) + ', repaid ' + n.repaid_date + ')').join(', ');
+      h += srcRow('Already repaid post-balance-sheet date \u2014 excluded from projection: ' + repaidStr);
+    }
     h += srcRow('Source: Balance sheet \u2014 unsecured notes &amp; term debt');
     h += noteRow('Each note first appears in its maturity-year column and carries forward.');
     return h;
@@ -135430,15 +135468,29 @@ function buildProjDetail(ticker, key) {
     const revs = instruments.filter(i => i.is_revolver);
     const sources = revs.length > 0 ? revs : (liq.debt_instruments || []).filter(i => i.type === 'revolving_credit' || i.type === 'secured_credit_facility');
     const rows = [];
+    const endYr = years[years.length - 1];
     for (const rev of sources) {
+      if (rev.repaid) continue;
+      const liqInst = (liq.debt_instruments || []).find(d => d.name === rev.name) || rev;
+      const rateStr = liqInst.interest_rate || '';
+      // Tranched revolvers (e.g., ARCC RCF, OBDC RCF): render each tranche
+      // on its own row at its own maturity year.
+      if (rev.maturity_schedule && rev.maturity_schedule.length > 0) {
+        for (const tr of rev.maturity_schedule) {
+          const tyr = tr.maturity_year;
+          if (!tyr || tyr > endYr) continue;
+          const vals = {}; for (const yr of years) vals[yr] = yr >= tyr ? (tr.outstanding_dollars || 0) : 0;
+          const label = rev.name + ' \u2014 ' + (tr.maturity_date || tyr) + ' tranche';
+          rows.push({ label, values: vals, indent: true,
+            note: (tr.interest_rate || rateStr) + ' \u00b7 $' + ((tr.outstanding_dollars || 0) / 1e6).toFixed(1) + 'M drawn' });
+        }
+        continue;
+      }
       const matYr = rev.maturity_year;
-      if (!matYr || matYr > years[years.length - 1]) continue;
+      if (!matYr || matYr > endYr) continue;
       const outstanding = rev.outstanding || 0;
-      const vals = {};
-      for (const yr of years) vals[yr] = yr >= matYr ? outstanding : 0;
-      const liqInst = (liq.debt_instruments || []).find(d => d.name === rev.name);
-      const rateStr = liqInst && liqInst.interest_rate ? liqInst.interest_rate : '';
-      const matStr = liqInst && liqInst.maturity_date ? liqInst.maturity_date : String(matYr);
+      const vals = {}; for (const yr of years) vals[yr] = yr >= matYr ? outstanding : 0;
+      const matStr = liqInst.maturity_date || String(matYr);
       rows.push({ label: rev.name, values: vals, indent: true, note: rateStr ? rateStr + ' \u00b7 ' + matStr : matStr });
     }
     if (rows.length === 0) {
@@ -135466,23 +135518,43 @@ function buildProjDetail(ticker, key) {
     ];
     const rows = [];
     for (const g of groups) {
-      const insts = instruments.filter(g.filter);
+      const insts = instruments.filter(g.filter).filter(i => !i.repaid);
       if (insts.length === 0) continue;
       rows.push({ sectionHeader: true, label: g.label });
       for (const inst of insts) {
-        // Cumulative interest: sum annual interest through each year, stopping
-        // at maturity.
+        const liqInst = (liq.debt_instruments || []).find(d => d.name === inst.name);
+        const rateStr = liqInst && liqInst.interest_rate ? liqInst.interest_rate : '';
+        // Tranched instruments: aggregate cumulative interest across tranches,
+        // each tranche stopping at its own maturity year.
+        if (inst.maturity_schedule && inst.maturity_schedule.length > 0) {
+          const vals = {}; let run = 0;
+          const totalOut = inst.maturity_schedule.reduce((s, t) => s + (t.outstanding_dollars || 0), 0) || inst.outstanding || 1;
+          for (const yr of years) {
+            for (const tr of inst.maturity_schedule) {
+              const tyr = tr.maturity_year;
+              if (!tyr || tyr < yr) continue;
+              // Proportional annual interest for this tranche.
+              run += (inst.annual_interest || 0) * ((tr.outstanding_dollars || 0) / totalOut);
+            }
+            vals[yr] = run;
+          }
+          rows.push({ label: inst.name + ' (tranched)', values: vals, indent: true, note: rateStr });
+          continue;
+        }
         const vals = {}; let run = 0;
         for (const yr of years) {
           if (!inst.maturity_year || inst.maturity_year >= yr) run += inst.annual_interest || 0;
           vals[yr] = run;
         }
-        const liqInst = (liq.debt_instruments || []).find(d => d.name === inst.name);
-        const rateStr = liqInst && liqInst.interest_rate ? liqInst.interest_rate : '';
         const matStr = inst.maturity_year ? 'mat. ' + (liqInst && liqInst.maturity_date ? liqInst.maturity_date : inst.maturity_year) : '';
         const note = [rateStr, matStr].filter(Boolean).join(' \u00b7 ');
         rows.push({ label: inst.name, values: vals, indent: true, note });
       }
+    }
+    const repaidInstruments = instruments.filter(i => i.repaid);
+    if (repaidInstruments.length > 0) {
+      const msg = repaidInstruments.map(i => i.name + ' (repaid ' + i.repaid_date + ')').join(', ');
+      rows.push({ sectionHeader: true, label: 'Excluded (repaid post-balance-sheet date): ' + msg });
     }
     const totals = {}; let run = 0;
     for (const yr of years) { run += cf.bdc_debt.interest_schedule[String(yr)] || 0; totals[yr] = run; }
@@ -135502,27 +135574,52 @@ function buildProjDetail(ticker, key) {
     let h = hdrRow('Unfunded Draws \u2014 Stress Calculation', gearBtn(gid));
     const details = liq.unfunded_detail || [];
     const drawRate = liqDrawRate / 100;
+    const contingentRate = liqContingentRate / 100;
     const rows = [];
     const allYears = v => { const o = {}; for (const yr of years) o[yr] = v; return o; };
-    if (details.length > 0) {
-      for (const d of details) {
-        rows.push({ label: d.section, values: allYears(d.amount * drawRate), indent: true });
+    let borrowerStressed = 0, contingentStressed = 0;
+    const borrowerRows = [], contingentRows = [];
+    for (const d of details) {
+      const ctype = d.commitment_type || 'borrower_drawable';
+      if (ctype === 'bdc_contingent') {
+        const v = d.amount * contingentRate;
+        contingentStressed += v;
+        contingentRows.push({ label: d.section, values: allYears(v), indent: true,
+          note: '$' + (d.amount / 1e6).toFixed(0) + 'M \u00d7 ' + liqContingentRate + '%' });
+      } else {
+        const v = d.amount * drawRate;
+        borrowerStressed += v;
+        borrowerRows.push({ label: d.section, values: allYears(v), indent: true,
+          note: '$' + (d.amount / 1e6).toFixed(0) + 'M \u00d7 ' + liqDrawRate + '%' });
       }
-    } else {
-      rows.push({ label: 'Total unfunded commitments', values: allYears(cf.unfunded_total * drawRate), indent: true });
     }
-    const stressed = cf.unfunded_total * drawRate;
+    if (borrowerRows.length > 0) {
+      rows.push({ sectionHeader: true, label: 'Borrower-drawable (revolvers / delayed-draw loans)' });
+      rows.push(...borrowerRows);
+    }
+    if (contingentRows.length > 0) {
+      rows.push({ sectionHeader: true, label: 'BDC-contingent (equity / JV commitments)' });
+      rows.push(...contingentRows);
+    }
+    if (borrowerRows.length === 0 && contingentRows.length === 0) {
+      rows.push({ label: 'Total unfunded commitments', values: allYears(cf.unfunded_total * drawRate), indent: true });
+      borrowerStressed = cf.unfunded_total * drawRate;
+    }
+    const stressed = borrowerStressed + contingentStressed;
     rows.push({ separator: true });
-    rows.push({ total: true, label: 'Cumulative stressed draw (' + liqDrawRate + '% draw rate)', values: allYears(stressed), color: '#a33' });
+    rows.push({ total: true, label: 'Cumulative stressed draw', values: allYears(stressed), color: '#a33' });
     h += miniTable(rows);
     h += rawRow(
       '<div id="' + gid + '" style="display:none;margin-top:4px;padding:6px 10px;background:#f5f5f0;border-radius:4px;border:1px solid #e0e0dc">' +
+      '<label style="font-size:11px;color:#666;display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
+      'Borrower draw: <input type="range" min="0" max="100" value="' + liqDrawRate + '" style="flex:1" oninput="this.nextElementSibling.textContent=this.value+\'%\'" onchange="liqDrawRate=parseFloat(this.value);document.getElementById(\'liq-draw-r\').value=this.value;document.getElementById(\'liq-draw-n\').value=this.value;renderLiquidityTab()"> <span>' + liqDrawRate + '%</span>' +
+      '</label>' +
       '<label style="font-size:11px;color:#666;display:flex;align-items:center;gap:8px">' +
-      'Draw rate: <input type="range" min="0" max="100" value="' + liqDrawRate + '" style="flex:1" oninput="this.nextElementSibling.textContent=this.value+\'%\'" onchange="liqDrawRate=parseFloat(this.value);document.getElementById(\'liq-draw-r\').value=this.value;document.getElementById(\'liq-draw-n\').value=this.value;renderLiquidityTab()"> <span>' + liqDrawRate + '%</span>' +
+      'Contingent draw: <input type="range" min="0" max="100" value="' + liqContingentRate + '" style="flex:1" oninput="this.nextElementSibling.textContent=this.value+\'%\'" onchange="liqContingentRate=parseFloat(this.value);var r=document.getElementById(\'liq-contingent-r\');var n=document.getElementById(\'liq-contingent-n\');if(r)r.value=this.value;if(n)n.value=this.value;renderLiquidityTab()"> <span>' + liqContingentRate + '%</span>' +
       '</label></div>'
     );
     h += srcRow('Source: SOI filings \u2014 unfunded commitments schedule');
-    h += noteRow('Immediate year-1 draw; carried forward through each cumulative column.');
+    h += noteRow('Immediate year-1 draw; carried forward through each cumulative column. Separate rates because equity/JV commitments are BDC-controlled, not borrower-initiated.');
     return h;
   }
 
@@ -136518,7 +136615,7 @@ setTimeout(() => {
 (function() {
   const el = document.createElement('div');
   el.style.cssText = 'position:fixed;bottom:8px;right:12px;font-size:10px;color:#999;z-index:1000;pointer-events:none';
-  const deployTs = 'Apr 16, 2026 10:04 AM ';
+  const deployTs = 'Apr 16, 2026 10:18 AM ';
   if (deployTs.startsWith('__')) {
     el.textContent = 'Local dev';
   } else {
