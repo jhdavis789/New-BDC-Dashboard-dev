@@ -1139,7 +1139,7 @@
         <h3>Liquidity Assumptions</h3>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
           <div>
-            <div class="slider-row"><span class="slider-label">Borrower-Drawable Draw Rate <span class="info-btn" data-info="liqDraw" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="100" value="15" id="liq-draw-r"><input type="number" min="0" max="100" value="15" id="liq-draw-n"><span class="pct-suffix">%</span></div>
+            <div class="slider-row"><span class="slider-label">Borrower-Drawable Draw Rate <span class="info-btn" data-info="liqDraw" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="100" value="100" id="liq-draw-r"><input type="number" min="0" max="100" value="100" id="liq-draw-n"><span class="pct-suffix">%</span></div>
             <div class="slider-row"><span class="slider-label">BDC-Contingent Draw Rate <span class="info-btn" data-info="liqContingent" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="100" value="10" id="liq-contingent-r"><input type="number" min="0" max="100" value="10" id="liq-contingent-n"><span class="pct-suffix">%</span></div>
             <div class="info-popup" data-popup="liqDraw" style="display:none">
               <p><strong>Borrower-Drawable Unfunded</strong> — % of revolver and delayed-draw term-loan commitments assumed to be drawn by borrowers during stress. In a downturn, distressed borrowers max out credit lines, forcing the BDC to fund new loans at par into a declining portfolio.</p>
@@ -1163,6 +1163,38 @@
             </div>
           </div>
         </div>
+
+        <!-- Defaults Control -->
+        <div style="border-top:1px solid #eee;margin-top:14px;padding-top:12px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+            <h4 style="font-size:13px;font-weight:600;margin:0;color:#333">Defaults Control <span style="font-weight:400;color:#888;font-size:11px">(decomposition of total loss rate &mdash; placeholder, not yet wired into projections)</span></h4>
+            <span style="font-size:12px;color:#666">Total Loss Rate: <strong id="liq-tlr-display" style="color:#c0392b">0.00%</strong></span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+            <div>
+              <div class="slider-row"><span class="slider-label">Default Rate <span class="info-btn" data-info="liqDefRate" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="50" value="10" step="0.1" id="liq-defrate-r"><input type="number" min="0" max="50" value="10" step="0.1" id="liq-defrate-n"><span class="pct-suffix">%</span></div>
+              <div class="info-popup" data-popup="liqDefRate" style="display:none">
+                <p><strong>Default Rate</strong> &mdash; % of portfolio that defaults during the stress horizon.</p>
+                <p>Default Rate &times; (1 &minus; Recovery) = Total Loss Rate. Moving this slider auto-adjusts Recovery to keep the total loss rate constant.</p>
+              </div>
+            </div>
+            <div>
+              <div class="slider-row"><span class="slider-label">Recovery Given Default <span class="info-btn" data-info="liqRecovery" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="100" value="60" step="0.1" id="liq-recovery-r"><input type="number" min="0" max="100" value="60" step="0.1" id="liq-recovery-n"><span class="pct-suffix">%</span></div>
+              <div class="info-popup" data-popup="liqRecovery" style="display:none">
+                <p><strong>Recovery Given Default</strong> &mdash; cents on the dollar recovered after default (1 &minus; LGD).</p>
+                <p>Moving this slider auto-adjusts Default Rate to keep the total loss rate constant.</p>
+              </div>
+            </div>
+            <div>
+              <div class="slider-row"><span class="slider-label">Time to Work Out <span class="info-btn" data-info="liqWorkout" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="60" value="18" step="1" id="liq-workout-r"><input type="number" min="0" max="60" value="18" step="1" id="liq-workout-n"><span class="pct-suffix" style="width:20px">mo</span></div>
+              <div class="info-popup" data-popup="liqWorkout" style="display:none">
+                <p><strong>Time to Work Out</strong> &mdash; months between default and realized recovery. Controls how long cash is tied up in defaulted positions before recoveries flow in.</p>
+                <p>Placeholder for future cash-flow timing &mdash; not yet wired into projections.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="quick-buttons" style="margin-top:10px">
           <button class="quick-btn" onclick="applyLiqPreset('base')">Base</button>
           <button class="quick-btn" onclick="applyLiqPreset('moderate')">Moderate Stress</button>
@@ -1232,33 +1264,6 @@
       </div>
     </div>
 
-    <div style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:24px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-        <h3 style="font-size:14px;font-weight:600;margin:0">Net Liquidity Position</h3>
-        <div style="position:relative">
-          <button id="liqGearBtn" onclick="document.getElementById('liqAdvMenu').style.display=document.getElementById('liqAdvMenu').style.display==='none'?'block':'none'" style="background:none;border:1px solid #ccc;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:13px;color:#888" title="Advanced settings">&#9881;</button>
-          <div id="liqAdvMenu" style="display:none;position:absolute;right:0;top:28px;background:#fff;border:1px solid #ddd;border-radius:6px;padding:12px 16px;box-shadow:0 4px 12px rgba(0,0,0,0.12);z-index:100;min-width:240px">
-            <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:8px;border-bottom:1px solid #eee;padding-bottom:6px">Advanced Settings</div>
-            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#666;cursor:pointer">
-              <input type="checkbox" id="liqIncludeRestricted" onchange="renderLiquidityTab()">
-              Include restricted cash in available liquidity
-            </label>
-            <p style="font-size:10px;color:#aaa;margin:4px 0 0 24px">Restricted cash is held as collateral or for specific obligations and is typically not available for general use.</p>
-          </div>
-        </div>
-      </div>
-      <p style="font-size:11px;color:#888;margin-bottom:12px"><em>Cash + undrawn revolver capacity (adjusted for renewal risk and borrowing base shrinkage) − stressed unfunded draws − near-term debt maturities (2yr).</em></p>
-      <div id="liqWaterfallTable"></div>
-    </div>
-
-    <div style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:24px">
-      <h3 style="font-size:14px;font-weight:600;margin-bottom:4px">Unfunded Commitment Stress <span class="info-btn" data-info="unfunded">&#9432;</span></h3>
-      <div class="info-popup" data-popup="unfunded" style="display:none;position:relative;margin-bottom:8px">
-        <p><strong>Unfunded commitments</strong> are contractual obligations to lend additional capital (revolvers, delayed draw term loans, equity commitments) that borrowers haven't drawn yet.</p>
-        <p>In a downturn, distressed borrowers draw down revolvers and delayed draws, forcing the BDC to fund at par into a declining portfolio. The "draw rate" models what percentage of unfunded commitments get called.</p>
-      </div>
-      <div id="liqUnfundedTable"></div>
-    </div>
   </div>
 
   <!-- POSITIONS TAB -->
@@ -132112,6 +132117,7 @@ function recalculate() {
   updateWaterfall(c.lossByBDC, c.encLossByBDC, c.unencLossByBDC);
   updateStacks();
   renderHoldingsTable();
+  if (typeof rebalanceDefaultsControl === 'function') rebalanceDefaultsControl('external');
   if (selectedView === 'liquidity') renderLiquidityTab();
 }
 
@@ -133996,16 +134002,56 @@ function refreshAll() {
 }
 
 // ======== LIQUIDITY TAB ========
-const LIQ_DEFAULTS = { draw: 15, sale: 0, div: 5, contingent: 10 };
+const LIQ_DEFAULTS = { draw: 100, sale: 0, div: 5, contingent: 10 };
 let liqDrawRate = LIQ_DEFAULTS.draw;
 let liqRevolverRisk = 0; // adjustable via projection detail gear
 let liqForcedSale = LIQ_DEFAULTS.sale;
 let liqDividendRate = LIQ_DEFAULTS.div;
 let liqContingentRate = LIQ_DEFAULTS.contingent;
+
+// Defaults control (placeholder — decomposition of total loss rate)
+let liqDefaultRate = 10;       // % of portfolio defaulting over horizon
+let liqRecoveryRate = 60;      // % recovered given default
+let liqWorkoutMonths = 18;     // months to realize recovery
+let _liqDefaultsLastEdited = 'default'; // 'default' or 'recovery'
 let liqProjectionChart = null;
 let _maturityInstruments = {};
 let _lastLiqResults = {};
 let _lastLiqProjection = null;
+// Click-to-exclude: set of component keys the user has toggled off. Excluded
+// components are zeroed out in the chart, coverage ratios, summary cards,
+// and the projection table. Keys map 1:1 to the projection's inflow/outflow
+// field names (e.g. 'dividend', 'cashInterest'), plus pseudo-keys for the
+// coverage-ratio lines.
+const liqExcludedKeys = new Set();
+// Labels for the chart legend mapped to their projection keys so the
+// legend-click handler knows which field to zero out.
+const LIQ_CHART_KEY_MAP = {
+  'Dividends': 'dividend',
+  'Note Repayment': 'debtRepayment',
+  'Revolver/Facility Repayment': 'revolverRepayment',
+  'Debt Interest Expense': 'debtInterest',
+  'Unfunded Draws': 'unfundedDraw',
+  'Cash on Hand': 'cashOnHand',
+  'Undrawn Revolvers': 'revolverCapacity',
+  'Cash Interest Income': 'cashInterest',
+  'Principal Repayments': 'principalRepayments',
+  'Secured Debt Coverage': 'coverageSecured',
+  'Total Debt Coverage': 'coverageTotal',
+};
+function liqKeyForLabel(label) {
+  if (!label) return null;
+  for (const k in LIQ_CHART_KEY_MAP) {
+    if (label.indexOf(k) === 0) return LIQ_CHART_KEY_MAP[k];
+  }
+  return null;
+}
+function toggleLiqExclude(key) {
+  if (!key) return;
+  if (liqExcludedKeys.has(key)) liqExcludedKeys.delete(key);
+  else liqExcludedKeys.add(key);
+  renderLiquidityTab();
+}
 
 function showLiqModal(title, bodyHtml) {
   const modal = document.getElementById('barModal');
@@ -134036,6 +134082,75 @@ function showLiqModal(title, bodyHtml) {
       document.getElementById(ids[1]).value = v;
     });
     el.addEventListener('change', () => { renderLiquidityTab(); });
+  });
+});
+
+// Defaults control: default rate, recovery given default, time to work out
+function getTotalLossRate() {
+  if (!_computed || !_computed.totalFV) return 0;
+  return (_computed.totalLoss / _computed.totalFV) * 100;
+}
+
+function syncDefaultsControlUI() {
+  const dr = document.getElementById('liq-defrate-r');
+  const dn = document.getElementById('liq-defrate-n');
+  const rr = document.getElementById('liq-recovery-r');
+  const rn = document.getElementById('liq-recovery-n');
+  const wr = document.getElementById('liq-workout-r');
+  const wn = document.getElementById('liq-workout-n');
+  const tlrEl = document.getElementById('liq-tlr-display');
+  if (dr) dr.value = liqDefaultRate.toFixed(1);
+  if (dn) dn.value = liqDefaultRate.toFixed(1);
+  if (rr) rr.value = liqRecoveryRate.toFixed(1);
+  if (rn) rn.value = liqRecoveryRate.toFixed(1);
+  if (wr) wr.value = liqWorkoutMonths;
+  if (wn) wn.value = liqWorkoutMonths;
+  if (tlrEl) tlrEl.textContent = getTotalLossRate().toFixed(2) + '%';
+}
+
+// Rebalance default/recovery to preserve TLR = default × (1 − recovery/100)
+function rebalanceDefaultsControl(source) {
+  const tlr = getTotalLossRate();
+  if (source === 'default') {
+    _liqDefaultsLastEdited = 'default';
+    if (liqDefaultRate > 0) {
+      liqRecoveryRate = Math.max(0, Math.min(100, 100 * (1 - tlr / liqDefaultRate)));
+    }
+  } else if (source === 'recovery') {
+    _liqDefaultsLastEdited = 'recovery';
+    const lgd = 1 - liqRecoveryRate / 100;
+    liqDefaultRate = lgd > 0 ? Math.max(0, Math.min(50, tlr / lgd)) : 50;
+  } else {
+    // External TLR change: keep the last-edited slider fixed, recompute the other
+    if (_liqDefaultsLastEdited === 'default' && liqDefaultRate > 0) {
+      liqRecoveryRate = Math.max(0, Math.min(100, 100 * (1 - tlr / liqDefaultRate)));
+    } else {
+      const lgd = 1 - liqRecoveryRate / 100;
+      liqDefaultRate = lgd > 0 ? Math.max(0, Math.min(50, tlr / lgd)) : 50;
+    }
+  }
+  syncDefaultsControlUI();
+}
+
+['defrate', 'recovery', 'workout'].forEach(key => {
+  const idMap = {
+    defrate: ['liq-defrate-r', 'liq-defrate-n'],
+    recovery: ['liq-recovery-r', 'liq-recovery-n'],
+    workout: ['liq-workout-r', 'liq-workout-n'],
+  };
+  const ids = idMap[key];
+  const maxVal = key === 'defrate' ? 50 : key === 'recovery' ? 100 : 60;
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', () => {
+      const v = Math.min(maxVal, Math.max(0, parseFloat(el.value) || 0));
+      document.getElementById(ids[0]).value = v;
+      document.getElementById(ids[1]).value = v;
+      if (key === 'defrate') { liqDefaultRate = v; rebalanceDefaultsControl('default'); }
+      else if (key === 'recovery') { liqRecoveryRate = v; rebalanceDefaultsControl('recovery'); }
+      else { liqWorkoutMonths = v; }
+    });
   });
 });
 
@@ -134580,10 +134695,15 @@ function computeCashFlowProjection(ticker) {
   if (!cf) return null;
   const years = cf.projection_years;
 
-  // Post-stress equity: subtract portfolio losses from book equity
+  // Post-stress equity: subtract portfolio losses from book equity. Then
+  // evolve equity each year by adding that year's net interest income and
+  // subtracting the dividend actually paid. Dividend per year = current
+  // equity x quarterly rate x 4, so if net income can't cover the dividend
+  // the equity base erodes and next year's dividend drops with it.
   computeStress();
   const portfolioLoss = (_computed && _computed.lossByBDC[ticker]) || 0;
   const postStressEquity = Math.max(0, cf.equity - portfolioLoss);
+  let equityRunning = postStressEquity;
 
   const incremental = years.map(yr => {
     // === INFLOWS ===
@@ -134626,10 +134746,19 @@ function computeCashFlowProjection(ticker) {
       ? cf.undrawn_revolvers * (1 - liqRevolverRisk / 100) : 0;
 
     // === OUTFLOWS ===
-    const dividend = postStressEquity * (liqDividendRate / 100) * 4;
     const debtRepayment = cf.bdc_debt.repayment_schedule[String(yr)] || 0;
     const revolverRepayment = (cf.bdc_debt.revolver_repayment_schedule || {})[String(yr)] || 0;
     const debtInterest = cf.bdc_debt.interest_schedule[String(yr)] || 0;
+    // Dividend from evolving equity. Book the dividend off the equity base
+    // AFTER adding this year's net interest income (cash in - debt out), so
+    // the dividend reflects a BDC that earns first and distributes second.
+    // When net income is negative (heavy stress), equity erodes faster.
+    const equityOpen = equityRunning;
+    const annualNetInterest = cashInterest - debtInterest;
+    const equityPreDividend = Math.max(0, equityOpen + annualNetInterest);
+    const dividend = equityPreDividend * (liqDividendRate / 100) * 4;
+    const equityClose = Math.max(0, equityPreDividend - dividend);
+    equityRunning = equityClose;
     // Borrower-drawable (revolvers, delayed-draw term loans) vs.
     // BDC-contingent (equity, JV) commitments get separate draw rates.
     // Fall back to the total when the classification isn't populated.
@@ -134645,8 +134774,22 @@ function computeCashFlowProjection(ticker) {
       inflows: { cashInterest, principalRepayments, cashOnHand, revolverCapacity },
       outflows: { dividend, debtRepayment, revolverRepayment, debtInterest, unfundedDraw },
       pikInterest,
+      equity: { open: equityOpen, netInterest: annualNetInterest, preDividend: equityPreDividend, dividend, close: equityClose },
     };
   });
+
+  // Apply click-to-exclude: zero out any component the user has toggled off.
+  // We mutate the incremental entries in place (they've already been returned
+  // by map()) so downstream cumulative sums and coverage ratios reflect the
+  // user's "what-if this line weren't there" view.
+  for (const entry of incremental) {
+    for (const k of Object.keys(entry.inflows)) {
+      if (liqExcludedKeys.has(k)) entry.inflows[k] = 0;
+    }
+    for (const k of Object.keys(entry.outflows)) {
+      if (liqExcludedKeys.has(k)) entry.outflows[k] = 0;
+    }
+  }
 
   // Build cumulative
   const cumulative = [];
@@ -134689,7 +134832,11 @@ function computeCashFlowProjection(ticker) {
 
     const securedCov = cumSecuredOut > 0 ? (c.totalInflow / cumSecuredOut) * 100 : null;
     const totalCov = c.totalOutflow > 0 ? (c.totalInflow / c.totalOutflow) * 100 : null;
-    coverageByYear.push({ year: yr.year, securedCov, totalCov });
+    coverageByYear.push({
+      year: yr.year,
+      securedCov: liqExcludedKeys.has('coverageSecured') ? null : securedCov,
+      totalCov: liqExcludedKeys.has('coverageTotal') ? null : totalCov,
+    });
   }
 
   return { incremental, cumulative, coverageByYear };
@@ -134861,13 +135008,29 @@ function renderLiquidityProjection(ticker) {
             usePointStyle: true, pointStyleWidth: 10, padding: 14,
             generateLabels: chart => {
               const ds = chart.data.datasets;
-              return ds.map((d, i) => ({
-                text: d.label, fillStyle: d._origBg || d.backgroundColor,
-                strokeStyle: d._origBorder || d.borderColor, lineWidth: 1,
-                hidden: !chart.isDatasetVisible(i), datasetIndex: i,
-                pointStyle: d.type === 'line' ? 'circle' : 'rectRounded',
-              }));
+              return ds.map((d, i) => {
+                const key = liqKeyForLabel(d.label);
+                const excluded = key && liqExcludedKeys.has(key);
+                return {
+                  text: (excluded ? '\u2014 ' : '') + d.label + (excluded ? ' (excluded)' : ''),
+                  fillStyle: d._origBg || d.backgroundColor,
+                  strokeStyle: d._origBorder || d.borderColor, lineWidth: 1,
+                  hidden: excluded || !chart.isDatasetVisible(i), datasetIndex: i,
+                  pointStyle: d.type === 'line' ? 'circle' : 'rectRounded',
+                  fontColor: excluded ? '#bbb' : '#555',
+                };
+              });
             },
+          },
+          // Click-to-exclude: toggle the component out of all downstream math
+          // (chart, coverage lines, summary cards, projection table).
+          onClick: (event, legendItem, legend) => {
+            const ds = legend.chart.data.datasets[legendItem.datasetIndex];
+            const key = liqKeyForLabel(ds && ds.label);
+            if (!key) return;
+            if (liqExcludedKeys.has(key)) liqExcludedKeys.delete(key);
+            else liqExcludedKeys.add(key);
+            renderLiquidityTab();
           },
           onHover: (event, legendItem, legend) => {
             const chart = legend.chart;
@@ -134988,7 +135151,7 @@ function renderProjectionTable(ticker, projection) {
   const thStyle = 'padding:8px 10px;text-align:right;font-size:11px;font-weight:600;color:#555;border-bottom:2px solid #ddd;background:#fafaf8';
   const tdBase = 'padding:7px 10px;text-align:right;font-size:11px;border-bottom:1px solid #f0f0ec';
 
-  let html = '<style>[data-proj-key]{cursor:pointer}[data-proj-key]:hover{background:#f5f5f0}</style>';
+  let html = '<style>[data-proj-key]{cursor:pointer}[data-proj-key]:hover{background:#f5f5f0}.proj-excl-toggle{cursor:pointer;color:#ccc;font-size:11px;margin-right:6px;font-weight:700;user-select:none}.proj-excl-toggle:hover{color:#c0392b}.proj-excl-toggle.on{color:#c0392b}tr.proj-excluded td{text-decoration:line-through;opacity:0.45}</style>';
   html += '<table style="width:100%;border-collapse:collapse">';
   html += '<thead><tr>';
   html += '<th style="' + thStyle + ';text-align:left;min-width:180px">Component</th>';
@@ -134996,6 +135159,27 @@ function renderProjectionTable(ticker, projection) {
     html += '<th style="' + thStyle + '">Cum. ' + c.year + '</th>';
   }
   html += '</tr></thead><tbody>';
+
+  // Helper: one clickable row with a ✕ toggle that excludes the component
+  // from all projection math (chart + coverage + totals).
+  const projRow = (key, label, section, valueFn, valColor) => {
+    const excluded = liqExcludedKeys.has(key);
+    let row = '<tr data-proj-key="' + key + '"' + (excluded ? ' class="proj-excluded"' : '') +
+      ' onclick="toggleProjDetail(\'' + key + '\',\'' + section + '\')">';
+    row += '<td style="' + tdBase + ';text-align:left;color:#666;padding-left:24px">';
+    row += '<span class="proj-expand-arrow" style="display:inline-block;color:#ccc;font-size:9px;margin-right:4px;transition:transform 0.15s">&#9654;</span>';
+    row += '<span class="proj-excl-toggle' + (excluded ? ' on' : '') +
+      '" title="' + (excluded ? 'Restore this component' : 'Exclude from calculation') +
+      '" onclick="event.stopPropagation();toggleLiqExclude(\'' + key + '\')">' +
+      (excluded ? '&#x21BA;' : '&#x2715;') + '</span>';
+    row += label + '</td>';
+    for (const c of projection.cumulative) {
+      const v = valueFn(c);
+      row += '<td style="' + tdBase + ';color:' + (v > 0 ? valColor : '#999') + '">' + valueFn.fmt(v) + '</td>';
+    }
+    row += '</tr>';
+    return row;
+  };
 
   // Inflows section
   const inflowKeys = [
@@ -135006,14 +135190,10 @@ function renderProjectionTable(ticker, projection) {
   ];
   html += '<tr><td colspan="' + (n + 1) + '" style="padding:10px 10px 5px;font-size:11px;font-weight:700;color:#27ae60;letter-spacing:0.5px;text-transform:uppercase;border-bottom:none">' +
     '<span style="display:inline-block;width:8px;height:8px;background:#7CAE7A;border-radius:2px;margin-right:6px;vertical-align:middle"></span>Inflows</td></tr>';
+  const inflowFmt = v => fmtDollar(v); inflowFmt.fmt = inflowFmt;
   for (const [key, label] of inflowKeys) {
-    html += '<tr data-proj-key="' + key + '" onclick="toggleProjDetail(\'' + key + '\',\'inflows\')">';
-    html += '<td style="' + tdBase + ';text-align:left;color:#666;padding-left:24px"><span class="proj-expand-arrow" style="display:inline-block;color:#ccc;font-size:9px;margin-right:4px;transition:transform 0.15s">&#9654;</span>' + label + '</td>';
-    for (const c of projection.cumulative) {
-      const v = c.inflows[key];
-      html += '<td style="' + tdBase + ';color:' + (v > 0 ? '#2d8a56' : '#999') + '">' + fmtDollar(v) + '</td>';
-    }
-    html += '</tr>';
+    const getter = c => c.inflows[key]; getter.fmt = inflowFmt;
+    html += projRow(key, label, 'inflows', getter, '#2d8a56');
   }
   // Total inflows
   html += '<tr style="background:#f5f9f5">';
@@ -135033,14 +135213,10 @@ function renderProjectionTable(ticker, projection) {
   ];
   html += '<tr><td colspan="' + (n + 1) + '" style="padding:12px 10px 5px;font-size:11px;font-weight:700;color:#c0392b;letter-spacing:0.5px;text-transform:uppercase;border-bottom:none">' +
     '<span style="display:inline-block;width:8px;height:8px;background:#C97B84;border-radius:2px;margin-right:6px;vertical-align:middle"></span>Outflows</td></tr>';
+  const outflowFmt = v => v > 0 ? '(' + fmtDollar(v) + ')' : fmtDollar(v); outflowFmt.fmt = outflowFmt;
   for (const [key, label] of outflowKeys) {
-    html += '<tr data-proj-key="' + key + '" onclick="toggleProjDetail(\'' + key + '\',\'outflows\')">';
-    html += '<td style="' + tdBase + ';text-align:left;color:#666;padding-left:24px"><span class="proj-expand-arrow" style="display:inline-block;color:#ccc;font-size:9px;margin-right:4px;transition:transform 0.15s">&#9654;</span>' + label + '</td>';
-    for (const c of projection.cumulative) {
-      const v = c.outflows[key];
-      html += '<td style="' + tdBase + ';color:' + (v > 0 ? '#a33' : '#999') + '">' + (v > 0 ? '(' + fmtDollar(v) + ')' : fmtDollar(v)) + '</td>';
-    }
-    html += '</tr>';
+    const getter = c => c.outflows[key]; getter.fmt = outflowFmt;
+    html += projRow(key, label, 'outflows', getter, '#a33');
   }
   // Total outflows
   html += '<tr style="background:#fdf5f5">';
@@ -135382,25 +135558,44 @@ function buildProjDetail(ticker, key) {
     computeStress();
     const ploss = (_computed && _computed.lossByBDC && _computed.lossByBDC[ticker]) || 0;
     const postEq = Math.max(0, cf.equity - ploss);
-    const annDiv = postEq * (liqDividendRate / 100) * 4;
     let h = hdrRow('Dividends \u2014 Calculation', gearBtn(gid));
-    // Calculation ledger (same every year): emit inside one banner row.
+    // One-time stress-loss ledger (unchanged — user likes this layout).
     let ledger = '<div style="max-width:520px;font-size:12px">';
     ledger += ledgerLine('Book equity', cf.equity, '');
     if (ploss > 0) {
       ledger += ledgerLine('Stress loss', ploss, '-');
       ledger += '<div style="display:flex;justify-content:space-between;padding:3px 0;border-top:1px solid #ddd">' +
-        '<span style="color:#555;font-weight:600">= Post-stress equity</span>' +
+        '<span style="color:#555;font-weight:600">= Post-stress equity (year-0 opening)</span>' +
         '<span style="color:#555;font-weight:600">' + fmtDollar(postEq) + '</span></div>';
     }
     ledger += ledgerPct('Quarterly rate \u00d7 4 qtrs', liqDividendRate + '% \u00d7 4');
-    ledger += ledgerTotal('Annual dividend (paid each year)', annDiv, '#a33');
     ledger += '</div>';
     h += rawRow(ledger);
-    // Cumulative time series
-    const cumDiv = {}; let run = 0;
-    for (const yr of years) { run += annDiv; cumDiv[yr] = run; }
+    // Per-year equity evolution driving the dividend paid each year. Pull
+    // these straight from the projection object so the math is never
+    // hardcoded — it uses the same income/expense series as the chart.
+    const openEq = {}, netInt = {}, preDiv = {}, annual = {}, closeEq = {}, cumDiv = {};
+    let run = 0;
+    const incr = _projData && _projData.incremental ? _projData.incremental : [];
+    for (let i = 0; i < years.length; i++) {
+      const yr = years[i];
+      const eq = (incr[i] && incr[i].equity) || {};
+      openEq[yr] = eq.open || 0;
+      netInt[yr] = eq.netInterest || 0;
+      preDiv[yr] = eq.preDividend || 0;
+      annual[yr] = eq.dividend || 0;
+      closeEq[yr] = eq.close || 0;
+      run += eq.dividend || 0;
+      cumDiv[yr] = run;
+    }
     h += miniTable([
+      { sectionHeader: true, label: 'Equity evolution (drives each year\u2019s dividend)' },
+      { label: 'Opening equity', values: openEq, indent: true },
+      { label: '+ Net interest income (cash int. − debt int.)', values: netInt, indent: true, color: '#2d8a56' },
+      { label: '= Equity pre-dividend', values: preDiv, indent: true, labelColor: '#555' },
+      { label: '\u00d7 ' + liqDividendRate + '%/qtr \u00d7 4 \u2192 annual dividend', values: annual, indent: true, color: '#a33' },
+      { label: '= Closing equity', values: closeEq, indent: true, labelColor: '#555' },
+      { separator: true },
       { total: true, label: 'Cumulative dividends paid', values: cumDiv, color: '#a33' },
     ]);
     h += rawRow(
@@ -135409,6 +135604,7 @@ function buildProjDetail(ticker, key) {
       'Dividend rate: <input type="range" min="0" max="20" step="0.5" value="' + liqDividendRate + '" style="flex:1" oninput="this.nextElementSibling.textContent=this.value+\'%/qtr\'" onchange="liqDividendRate=parseFloat(this.value);document.getElementById(\'liq-div-r\').value=this.value;document.getElementById(\'liq-div-n\').value=this.value;renderLiquidityTab()"> <span>' + liqDividendRate + '%/qtr</span>' +
       '</label></div>'
     );
+    h += srcRow('Dividend varies per year as equity evolves with net interest income − dividends paid. Equity pulled from stress-model output, not hardcoded.');
     return h;
   }
 
@@ -136615,7 +136811,7 @@ setTimeout(() => {
 (function() {
   const el = document.createElement('div');
   el.style.cssText = 'position:fixed;bottom:8px;right:12px;font-size:10px;color:#999;z-index:1000;pointer-events:none';
-  const deployTs = 'Apr 16, 2026 10:18 AM ';
+  const deployTs = 'Apr 16, 2026 10:40 AM ';
   if (deployTs.startsWith('__')) {
     el.textContent = 'Local dev';
   } else {
