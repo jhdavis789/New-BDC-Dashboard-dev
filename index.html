@@ -134251,6 +134251,34 @@ let pikMode = "portfolio";
 let naMode = "portfolio";
 let naCompanyLevel = false;
 
+// ======== URL → STATE (on load; shareable views) ========
+(function readURLState() {
+  const p = new URLSearchParams(location.search);
+  const urlView = p.get('view');
+  const urlBdc = p.get('bdc');
+  const VIEWS = ['stress', 'pik', 'liquidity', 'positions'];
+  if (urlView && VIEWS.includes(urlView)) selectedView = urlView;
+  if (urlBdc && (urlBdc === 'ALL' || (Array.isArray(DATA.tickers) && DATA.tickers.includes(urlBdc)))) {
+    selectedBDC = urlBdc;
+  }
+  // Liquidity view requires a specific BDC — mirrors existing tab-switch logic
+  if (selectedView === 'liquidity' && selectedBDC === 'ALL') {
+    selectedBDC = DATA.tickers[0];
+  }
+  // Sync button/panel .active classes so initial render matches URL (no flash)
+  document.querySelectorAll('#bdcTabs button').forEach(b => b.classList.toggle('active', b.dataset.bdc === selectedBDC));
+  document.querySelectorAll('#viewTabs button').forEach(b => b.classList.toggle('active', b.dataset.view === selectedView));
+  const setP = (id, on) => { const el = document.getElementById(id); if (el) el.classList.toggle('active', on); };
+  setP('panel-stress', selectedView === 'stress');
+  setP('panel-pik', selectedView === 'pik');
+  setP('panel-liquidity', selectedView === 'liquidity');
+  setP('panel-positions', selectedView === 'positions');
+  const allBtn = document.querySelector('#bdcTabs button[data-bdc="ALL"]');
+  if (allBtn) allBtn.style.display = (selectedView === 'liquidity') ? 'none' : '';
+  const presetContainer = document.getElementById('sharedPresetContainer');
+  if (presetContainer) presetContainer.style.display = (selectedView === 'stress' || selectedView === 'liquidity') ? '' : 'none';
+})();
+
 // Compute total_fv from by_seniority for each portfolio (data has total_fv=0)
 for (const ticker of DATA.tickers) {
   const p = DATA.portfolios[ticker];
@@ -140118,10 +140146,34 @@ setTimeout(() => {
   if (selectedBDC === 'ALL') renderBondMarket();
 }, 500);
 
+// ======== STATE → URL (on change) ========
+(function wireURLSync() {
+  function writeURL() {
+    const p = new URLSearchParams();
+    if (selectedBDC !== 'ALL') p.set('bdc', selectedBDC);
+    if (selectedView !== 'stress') p.set('view', selectedView);
+    const qs = p.toString();
+    history.replaceState(null, '', qs ? (location.pathname + '?' + qs) : location.pathname);
+  }
+  document.getElementById('bdcTabs').addEventListener('click', e => {
+    if (e.target.dataset.bdc) queueMicrotask(writeURL);
+  });
+  document.getElementById('viewTabs').addEventListener('click', e => {
+    if (e.target.dataset.view) queueMicrotask(writeURL);
+  });
+  // goToPosition() mutates state without a click event; wrap it
+  if (typeof goToPosition === 'function') {
+    const _orig = goToPosition;
+    goToPosition = function() { _orig.apply(this, arguments); writeURL(); };
+  }
+  // Initial write so URL reflects the state we booted into
+  writeURL();
+})();
+
 (function() {
   const el = document.createElement('div');
   el.style.cssText = 'position:fixed;bottom:8px;right:12px;font-size:10px;color:#999;z-index:1000;pointer-events:none';
-  const deployTs = 'Apr 16, 2026 4:37 PM ';
+  const deployTs = 'Apr 16, 2026 4:57 PM ';
   if (deployTs.startsWith('__')) {
     el.textContent = 'Local dev';
   } else {
