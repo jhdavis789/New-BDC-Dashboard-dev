@@ -1156,7 +1156,7 @@
           <div>
             <div class="slider-row"><span class="slider-label">Dividend Rate /qtr <span class="info-btn" data-info="liqDiv" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="20" value="5" step="0.5" id="liq-div-r"><input type="number" min="0" max="20" value="5" step="0.5" id="liq-div-n"><span class="pct-suffix">%</span></div>
             <div class="info-popup" data-popup="liqDiv" style="display:none">
-              <p><strong>Dividend Rate</strong> — annual dividend as % of post-stress equity.</p>
+              <p><strong>Dividend Rate</strong> — quarterly dividend as % of post-stress equity (annualized = 4&times; this rate).</p>
               <p>BDCs must distribute 90%+ of taxable income to maintain RIC tax status. This is a mandatory cash drain that can't easily be stopped even in stress. The rate is applied to post-stress equity, so larger portfolio losses automatically reduce the dividend burden.</p>
             </div>
           </div>
@@ -1170,7 +1170,7 @@
       </div>
     </div>
 
-    <div class="card-row" id="liqCards"></div>
+    <div class="card-row" id="liqCards" style="display:none"></div>
 
     <!-- Balance Sheet Detail (single BDC only) -->
     <div id="liqBalanceSheet" style="display:none;margin-bottom:24px"></div>
@@ -1178,7 +1178,7 @@
     <!-- 5-Year Liquidity Projection (single BDC only) -->
     <div id="liqProjectionSection" style="display:none;margin-bottom:24px">
       <!-- Summary metric cards -->
-      <div class="card-row" id="liqProjCards" style="margin-bottom:16px"></div>
+      <div class="card-row" id="liqProjCards" style="display:none;margin-bottom:16px"></div>
 
       <div style="background:#fff;border:1px solid #ddd;border-radius:8px;overflow:hidden">
         <!-- Header bar with gradient accent -->
@@ -1202,7 +1202,7 @@
             Each year's bar includes all prior years. Stress rates from the Stress Model tab reduce both
             interest income and principal recoveries proportionally.</p>
             <p>CLO principal repayment is excluded (non-recourse, match-funded), but CLO <em>interest expense</em> is included as a cash outflow. PIK income is tracked but not
-            counted as a cash inflow. Dividend rate is adjustable above (default 10% of equity).</p>
+            counted as a cash inflow. Dividend rate is adjustable above (default 5%/qtr of equity).</p>
             <p id="liqSofrNote" style="font-style:italic;color:#666"></p>
           </div>
         </div>
@@ -133741,7 +133741,7 @@ function refreshAll() {
 let liqDrawRate = 15;
 const liqRevolverRisk = 0; // hardcoded — slider removed
 let liqForcedSale = 0;
-let liqDividendRate = 10;
+let liqDividendRate = 5;
 let liqProjectionChart = null;
 let _maturityInstruments = {};
 let _lastLiqResults = {};
@@ -133756,7 +133756,7 @@ function showLiqModal(title, bodyHtml) {
 
 ['draw', 'sale', 'div'].forEach(key => {
   const ids = key === 'draw' ? ['liq-draw-r', 'liq-draw-n'] : key === 'div' ? ['liq-div-r', 'liq-div-n'] : ['liq-sale-r', 'liq-sale-n'];
-  const maxVal = key === 'sale' ? 50 : key === 'div' ? 15 : 100;
+  const maxVal = key === 'sale' ? 50 : key === 'div' ? 20 : 100;
   ids.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -134250,7 +134250,7 @@ function computeCashFlowProjection(ticker) {
       ? cf.undrawn_revolvers * (1 - liqRevolverRisk / 100) : 0;
 
     // === OUTFLOWS ===
-    const dividend = postStressEquity * (liqDividendRate / 100);
+    const dividend = postStressEquity * (liqDividendRate / 100) * 4;
     const debtRepayment = cf.bdc_debt.repayment_schedule[String(yr)] || 0;
     const debtInterest = cf.bdc_debt.interest_schedule[String(yr)] || 0;
     const unfundedDraw = (yr === years[0])
@@ -134374,7 +134374,7 @@ function renderLiquidityProjection(ticker) {
       labels,
       datasets: [
         // OUTFLOW stack (warm/rose tones — intentional palette separation from inflows)
-        { label: 'Dividends (' + liqDividendRate + '% equity)',
+        { label: 'Dividends (' + liqDividendRate + '%/qtr equity)',
           data: projection.cumulative.map(c => c.outflows.dividend / 1e9),
           backgroundColor: '#AD5A6B', borderColor: '#9A4D5E', borderWidth: 1,
           stack: 'outflows', categoryPercentage: 0.72, barPercentage: 0.92 },
@@ -134678,7 +134678,7 @@ function renderProjectionTable(ticker, projection) {
 
   // Outflows section
   const outflowKeys = [
-    ['dividend', 'Dividends (' + liqDividendRate + '% equity)'],
+    ['dividend', 'Dividends (' + liqDividendRate + '%/qtr equity)'],
     ['debtRepayment', 'Debt Repayment (ex-CLO)'],
     ['debtInterest', 'Debt Interest Expense'],
     ['unfundedDraw', 'Unfunded Draws'],
