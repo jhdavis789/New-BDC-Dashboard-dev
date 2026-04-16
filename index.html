@@ -1157,9 +1157,13 @@
           </div>
           <div>
             <div class="slider-row"><span class="slider-label">Dividend Rate /qtr <span class="info-btn" data-info="liqDiv" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="20" value="5" step="0.5" id="liq-div-r"><input type="number" min="0" max="20" value="5" step="0.5" id="liq-div-n"><span class="pct-suffix">%</span></div>
+            <div class="slider-row"><span class="slider-label">Revolver Capacity Haircut <span class="info-btn" data-info="liqRevRisk" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="100" value="0" id="liq-revrisk-r"><input type="number" min="0" max="100" value="0" id="liq-revrisk-n"><span class="pct-suffix">%</span></div>
             <div class="info-popup" data-popup="liqDiv" style="display:none">
               <p><strong>Dividend Rate</strong> — quarterly dividend as % of post-stress equity (annualized = 4&times; this rate).</p>
               <p>BDCs must distribute 90%+ of taxable income to maintain RIC tax status. This is a mandatory cash drain that can't easily be stopped even in stress. The rate is applied to post-stress equity, so larger portfolio losses automatically reduce the dividend burden.</p>
+            </div>
+            <div class="info-popup" data-popup="liqRevRisk" style="display:none">
+              <p><strong>Revolver Capacity Haircut</strong> &mdash; stress assumption for how much of the BDC's undrawn revolver capacity becomes unavailable in a liquidity crisis (lender covenant breaches, counterparty risk).</p>
             </div>
           </div>
         </div>
@@ -134024,6 +134028,19 @@ let _lastLiqProjection = null;
 // field names (e.g. 'dividend', 'cashInterest'), plus pseudo-keys for the
 // coverage-ratio lines.
 const liqExcludedKeys = new Set();
+// Line-item exclusions keyed 'parentCategory:lineLabel' (e.g.
+// 'cashOnHand:restricted_cash', 'debtRepayment:2026 Notes'). Excluded lines
+// subtract from their parent totals in the projection.
+const liqExcludedLines = new Set();
+function isLineExcluded(parent, line) {
+  return liqExcludedLines.has(parent + ':' + line);
+}
+function toggleLiqLine(parent, line) {
+  const k = parent + ':' + line;
+  if (liqExcludedLines.has(k)) liqExcludedLines.delete(k);
+  else liqExcludedLines.add(k);
+  renderLiquidityTab();
+}
 // Labels for the chart legend mapped to their projection keys so the
 // legend-click handler knows which field to zero out.
 const LIQ_CHART_KEY_MAP = {
@@ -134036,8 +134053,9 @@ const LIQ_CHART_KEY_MAP = {
   'Undrawn Revolvers': 'revolverCapacity',
   'Cash Interest Income': 'cashInterest',
   'Principal Repayments': 'principalRepayments',
+  'Liquidity Coverage': 'coverageLiquidity',
   'Secured Debt Coverage': 'coverageSecured',
-  'Total Debt Coverage': 'coverageTotal',
+  'Unsecured Debt Coverage': 'coverageUnsecured',
 };
 function liqKeyForLabel(label) {
   if (!label) return null;
@@ -134060,12 +134078,13 @@ function showLiqModal(title, bodyHtml) {
   modal.style.display = 'flex';
 }
 
-['draw', 'sale', 'div', 'contingent'].forEach(key => {
+['draw', 'sale', 'div', 'contingent', 'revrisk'].forEach(key => {
   const idMap = {
     draw: ['liq-draw-r', 'liq-draw-n'],
     div: ['liq-div-r', 'liq-div-n'],
     sale: ['liq-sale-r', 'liq-sale-n'],
     contingent: ['liq-contingent-r', 'liq-contingent-n'],
+    revrisk: ['liq-revrisk-r', 'liq-revrisk-n'],
   };
   const ids = idMap[key];
   const maxVal = key === 'sale' ? 50 : key === 'div' ? 20 : 100;
@@ -134077,6 +134096,7 @@ function showLiqModal(title, bodyHtml) {
       if (key === 'draw') liqDrawRate = v;
       else if (key === 'div') liqDividendRate = v;
       else if (key === 'contingent') liqContingentRate = v;
+      else if (key === 'revrisk') liqRevolverRisk = v;
       else liqForcedSale = v;
       document.getElementById(ids[0]).value = v;
       document.getElementById(ids[1]).value = v;
@@ -134778,10 +134798,125 @@ function computeCashFlowProjection(ticker) {
     };
   });
 
-  // Apply click-to-exclude: zero out any component the user has toggled off.
-  // We mutate the incremental entries in place (they've already been returned
-  // by map()) so downstream cumulative sums and coverage ratios reflect the
-  // user's "what-if this line weren't there" view.
+  // Apply line-level exclusions first: subtract the contribution of any
+  // excluded sub-item from its parent total, then apply category-level
+  // exclusions (which zero out the entire field).
+  const liq = DATA.liquidity[ticker];
+  const firstYr = years[0];
+  for (const entry of incremental) {
+    const yr = entry.year;
+
+    // Cash on hand: subtract excluded components from cash_detail (year 1 only)
+    if (yr === firstYr) {
+      const cd = liq.cash_detail || {};
+      for (const k of Object.keys(cd)) {
+        if (isLineExcluded('cashOnHand', k)) entry.inflows.cashOnHand -= cd[k];
+      }
+      if (entry.inflows.cashOnHand < 0) entry.inflows.cashOnHand = 0;
+    }
+
+    // Undrawn revolvers: subtract excluded facilities (year 1 only)
+    if (yr === firstYr) {
+      const risk = typeof liqRevolverRisk !== 'undefined' ? liqRevolverRisk : 0;
+      for (const inst of (liq.debt_instruments || [])) {
+        if (inst.type !== 'revolving_credit' && inst.type !== 'secured_credit_facility') continue;
+        if (isLineExcluded('revolverCapacity', inst.name)) {
+          entry.inflows.revolverCapacity -= (inst.undrawn || 0) * (1 - risk / 100);
+        }
+      }
+      if (entry.inflows.revolverCapacity < 0) entry.inflows.revolverCapacity = 0;
+    }
+
+    // Cash interest income: drop seniority buckets the user excluded
+    for (const sector in cf.interest_matrix) {
+      const secRate = (sectorRates[sector] || 0) / 100;
+      for (const sen in cf.interest_matrix[sector]) {
+        if (!isLineExcluded('cashInterest', sen)) continue;
+        const senRate = (seniorityRates[sen] || 0) / 100;
+        const survival = (1 - senRate) * (1 - secRate);
+        for (const mYr in cf.interest_matrix[sector][sen]) {
+          if (mYr === 'none' || parseInt(mYr) < yr) continue;
+          const cell = cf.interest_matrix[sector][sen][mYr];
+          entry.inflows.cashInterest -= (cell.cash + cell.imputed) * survival;
+        }
+      }
+    }
+    if (entry.inflows.cashInterest < 0) entry.inflows.cashInterest = 0;
+
+    // Principal repayments: drop excluded seniority buckets
+    for (const sector in cf.principal_matrix) {
+      const secRate = (sectorRates[sector] || 0) / 100;
+      for (const sen in cf.principal_matrix[sector]) {
+        if (!isLineExcluded('principalRepayments', sen)) continue;
+        const senRate = (seniorityRates[sen] || 0) / 100;
+        const survival = (1 - senRate) * (1 - secRate);
+        const par = cf.principal_matrix[sector][sen][String(yr)] || 0;
+        entry.inflows.principalRepayments -= par * survival;
+      }
+    }
+    if (entry.inflows.principalRepayments < 0) entry.inflows.principalRepayments = 0;
+
+    // Note repayment: drop excluded instruments (per tranche or single)
+    for (const inst of (cf.bdc_debt.instruments || [])) {
+      if (inst.is_clo || inst.is_revolver || inst.repaid) continue;
+      const sched = inst.maturity_schedule && inst.maturity_schedule.length
+        ? inst.maturity_schedule
+        : (inst.maturity_year
+            ? [{ maturity_year: inst.maturity_year, outstanding_dollars: inst.outstanding }]
+            : []);
+      for (const tr of sched) {
+        if (tr.maturity_year !== yr) continue;
+        const lineKey = inst.maturity_schedule ? inst.name + ' @ ' + (tr.maturity_date || tr.maturity_year) : inst.name;
+        if (isLineExcluded('debtRepayment', lineKey)) {
+          entry.outflows.debtRepayment -= tr.outstanding_dollars || 0;
+        }
+      }
+    }
+    if (entry.outflows.debtRepayment < 0) entry.outflows.debtRepayment = 0;
+
+    // Revolver repayment: drop excluded revolver facilities (per tranche or single)
+    for (const inst of (cf.bdc_debt.instruments || [])) {
+      if (!inst.is_revolver || inst.repaid) continue;
+      const sched = inst.maturity_schedule && inst.maturity_schedule.length
+        ? inst.maturity_schedule
+        : (inst.maturity_year
+            ? [{ maturity_year: inst.maturity_year, outstanding_dollars: inst.outstanding }]
+            : []);
+      for (const tr of sched) {
+        if (tr.maturity_year !== yr) continue;
+        const lineKey = inst.maturity_schedule ? inst.name + ' @ ' + (tr.maturity_date || tr.maturity_year) : inst.name;
+        if (isLineExcluded('revolverRepayment', lineKey)) {
+          entry.outflows.revolverRepayment -= tr.outstanding_dollars || 0;
+        }
+      }
+    }
+    if (entry.outflows.revolverRepayment < 0) entry.outflows.revolverRepayment = 0;
+
+    // Debt interest: drop excluded instruments' interest contribution
+    for (const inst of (cf.bdc_debt.instruments || [])) {
+      if (inst.repaid) continue;
+      if (inst.maturity_year && inst.maturity_year < yr) continue;
+      if (isLineExcluded('debtInterest', inst.name)) {
+        entry.outflows.debtInterest -= inst.annual_interest || 0;
+      }
+    }
+    if (entry.outflows.debtInterest < 0) entry.outflows.debtInterest = 0;
+
+    // Unfunded draws: drop excluded categories (year 1 only)
+    if (yr === firstYr) {
+      for (const u of (liq.unfunded_detail || [])) {
+        if (!isLineExcluded('unfundedDraw', u.section)) continue;
+        const rate = u.commitment_type === 'bdc_contingent'
+          ? liqContingentRate : liqDrawRate;
+        entry.outflows.unfundedDraw -= u.amount * (rate / 100);
+      }
+      if (entry.outflows.unfundedDraw < 0) entry.outflows.unfundedDraw = 0;
+    }
+  }
+
+  // Apply category-level exclusions: zero out any component the user has
+  // toggled off at the top-level. Runs AFTER line-level subtractions so
+  // both views stay consistent.
   for (const entry of incremental) {
     for (const k of Object.keys(entry.inflows)) {
       if (liqExcludedKeys.has(k)) entry.inflows[k] = 0;
@@ -134808,34 +134943,34 @@ function computeCashFlowProjection(ticker) {
     });
   }
 
-  // Coverage ratios from cumulative cash flows: sources / needs
-  // Secured coverage uses only secured-debt-related outflows in the denominator
-  const coverageByYear = [];
-  const instruments = cf.bdc_debt.instruments || [];
-  let cumSecuredOut = 0;
+  // Liquidity coverage: cumulative inflows / cumulative outflows (bar-chart ratio).
+  // Secured / Unsecured coverage come from the stress-model balance-sheet waterfall:
+  //   secured has first claim on the encumbered (collateral) pool;
+  //   unsecured gets any excess + unencumbered, net of other liabilities.
+  // These are point-in-time asset-based ratios, so they plot as flat lines.
+  const cap = (DATA.capital_structure || {})[ticker] || {};
+  const encLoss = (_computed && _computed.encLossByBDC && _computed.encLossByBDC[ticker]) || 0;
+  const unencLoss = (_computed && _computed.unencLossByBDC && _computed.unencLossByBDC[ticker]) || 0;
+  const postEnc = Math.max(0, (cap.encumbered_fv || 0) - encLoss);
+  const postUnenc = Math.max(0, (cap.unencumbered_fv || 0) - unencLoss);
+  const securedDebt = cap.secured_debt || 0;
+  const unsecuredDebt = cap.unsecured_debt || 0;
+  const otherLiab = cap.other_liabilities || 0;
+  const securedCovStatic = securedDebt > 0 ? (postEnc / securedDebt) * 100 : null;
+  const excessFromSecured = Math.max(0, postEnc - securedDebt);
+  const poolForUnsecured = Math.max(0, excessFromSecured + postUnenc - otherLiab);
+  const unsecuredCovStatic = unsecuredDebt > 0 ? (poolForUnsecured / unsecuredDebt) * 100 : null;
 
+  const coverageByYear = [];
   for (let i = 0; i < incremental.length; i++) {
     const yr = incremental[i];
     const c = cumulative[i];
-
-    // Secured outflows: repayment + interest for secured (non-CLO) instruments,
-    // plus shared obligations (dividends, unfunded draws)
-    let secRepay = 0, secInterest = 0;
-    for (const inst of instruments) {
-      if (inst.is_clo || !inst.secured) continue;
-      if (inst.maturity_year === yr.year) secRepay += inst.outstanding;
-      if (!inst.maturity_year || inst.maturity_year >= yr.year) {
-        secInterest += inst.annual_interest || 0;
-      }
-    }
-    cumSecuredOut += secRepay + secInterest + yr.outflows.revolverRepayment + yr.outflows.dividend + yr.outflows.unfundedDraw;
-
-    const securedCov = cumSecuredOut > 0 ? (c.totalInflow / cumSecuredOut) * 100 : null;
-    const totalCov = c.totalOutflow > 0 ? (c.totalInflow / c.totalOutflow) * 100 : null;
+    const liquidityCov = c.totalOutflow > 0 ? (c.totalInflow / c.totalOutflow) * 100 : null;
     coverageByYear.push({
       year: yr.year,
-      securedCov: liqExcludedKeys.has('coverageSecured') ? null : securedCov,
-      totalCov: liqExcludedKeys.has('coverageTotal') ? null : totalCov,
+      liquidityCov: liqExcludedKeys.has('coverageLiquidity') ? null : liquidityCov,
+      securedCov: liqExcludedKeys.has('coverageSecured') ? null : securedCovStatic,
+      unsecuredCov: liqExcludedKeys.has('coverageUnsecured') ? null : unsecuredCovStatic,
     });
   }
 
@@ -134943,16 +135078,21 @@ function renderLiquidityProjection(ticker) {
           backgroundColor: '#4CAF6A', borderColor: '#3E9B5A', borderWidth: 1,
           stack: 'inflows', categoryPercentage: 0.72, barPercentage: 0.92 },
         // Coverage ratio lines (right y-axis)
+        { label: 'Liquidity Coverage',
+          data: projection.coverageByYear.map(c => c.liquidityCov),
+          type: 'line', yAxisID: 'y2', borderColor: '#8E6BAD', backgroundColor: '#8E6BAD',
+          borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#8E6BAD',
+          pointBorderColor: '#fff', pointBorderWidth: 1.5, tension: 0, fill: false, order: -1 },
         { label: 'Secured Debt Coverage',
           data: projection.coverageByYear.map(c => c.securedCov),
           type: 'line', yAxisID: 'y2', borderColor: '#6B9DAD', backgroundColor: '#6B9DAD',
           borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#6B9DAD',
-          pointBorderColor: '#fff', pointBorderWidth: 1.5, tension: 0, fill: false, order: -1 },
-        { label: 'Total Debt Coverage',
-          data: projection.coverageByYear.map(c => c.totalCov),
-          type: 'line', yAxisID: 'y2', borderColor: '#8E6BAD', backgroundColor: '#8E6BAD',
-          borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#8E6BAD',
           pointBorderColor: '#fff', pointBorderWidth: 1.5, tension: 0, fill: false, order: -2 },
+        { label: 'Unsecured Debt Coverage',
+          data: projection.coverageByYear.map(c => c.unsecuredCov),
+          type: 'line', yAxisID: 'y2', borderColor: '#A8864A', backgroundColor: '#A8864A',
+          borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#A8864A',
+          pointBorderColor: '#fff', pointBorderWidth: 1.5, tension: 0, fill: false, order: -3 },
       ],
     },
     options: {
@@ -134995,8 +135135,9 @@ function renderLiquidityProjection(ticker) {
         // Net + coverage footer
         html += '<div style="margin-top:16px;padding:12px 16px;border-radius:6px;background:' + (net >= 0 ? '#eef7ee' : '#fdeeed') + ';display:flex;gap:24px;align-items:center;flex-wrap:wrap">';
         html += '<div><span style="font-size:12px;color:#666">Net Position:</span> <strong style="font-size:14px;color:' + netColor + '">' + fD(net) + '</strong></div>';
-        if (cov && cov.securedCov != null) html += '<div><span style="font-size:12px;color:#666">Secured Coverage:</span> <strong style="color:#6B9DAD">' + cov.securedCov.toFixed(0) + '%</strong></div>';
-        if (cov && cov.totalCov != null) html += '<div><span style="font-size:12px;color:#666">Total Coverage:</span> <strong style="color:#8E6BAD">' + cov.totalCov.toFixed(0) + '%</strong></div>';
+        if (cov && cov.liquidityCov != null) html += '<div><span style="font-size:12px;color:#666">Liquidity Coverage:</span> <strong style="color:#8E6BAD">' + cov.liquidityCov.toFixed(0) + '%</strong></div>';
+        if (cov && cov.securedCov != null) html += '<div><span style="font-size:12px;color:#666">Secured Debt Coverage:</span> <strong style="color:#6B9DAD">' + cov.securedCov.toFixed(0) + '%</strong></div>';
+        if (cov && cov.unsecuredCov != null) html += '<div><span style="font-size:12px;color:#666">Unsecured Debt Coverage:</span> <strong style="color:#A8864A">' + cov.unsecuredCov.toFixed(0) + '%</strong></div>';
         html += '</div>';
         showLiqModal(ticker + ' — Cumulative through ' + c.year, html);
       },
@@ -135350,13 +135491,27 @@ function buildProjDetail(ticker, key) {
       }
       const dimmed = row.dimmed;
       const isTotal = !!row.total;
+      // Line-item exclusion support: rows supply parentKey + lineKey. When
+      // either is set we render a ✕ toggle and strike the row through when
+      // it's currently excluded.
+      const excluded = row.parentKey && row.lineKey
+        ? isLineExcluded(row.parentKey, row.lineKey) : false;
       const rowBorder = isTotal ? ('border-top:2px solid ' + (row.borderColor || '#ccc') + ';') : 'border-bottom:1px solid #f0f0ec;';
       const labelColor = row.labelColor || (isTotal ? '#333' : (dimmed ? '#bbb' : '#777'));
       const weight = isTotal ? 'font-weight:700;' : '';
       const italic = dimmed ? 'font-style:italic;' : '';
+      const strike = excluded ? 'text-decoration:line-through;opacity:0.45;' : '';
       const indent = isTotal ? 'padding-left:24px;' : (row.indent ? 'padding-left:40px;' : 'padding-left:24px;');
       h += '<tr class="' + DETAIL_CLASS + '">';
-      h += '<td style="' + labelTd + ';' + rowBorder + indent + weight + italic + 'color:' + labelColor + '">';
+      h += '<td style="' + labelTd + ';' + rowBorder + indent + weight + italic + strike + 'color:' + labelColor + '">';
+      if (row.parentKey && row.lineKey) {
+        const esc = String(row.lineKey).replace(/'/g, "\\'");
+        h += '<span class="proj-excl-toggle' + (excluded ? ' on' : '') +
+          '" title="' + (excluded ? 'Restore this line' : 'Exclude this line') +
+          '" onclick="event.stopPropagation();toggleLiqLine(\'' + row.parentKey +
+          '\',\'' + esc + '\')">' + (excluded ? '&#x21BA;' : '&#x2715;') +
+          '</span> ';
+      }
       h += row.label;
       if (row.note) h += ' <span style="color:#bbb;font-size:10px;font-weight:400;font-style:normal">' + row.note + '</span>';
       h += '</td>';
@@ -135364,7 +135519,7 @@ function buildProjDetail(ticker, key) {
         const v = (row.values || {})[yr] || 0;
         const defaultColor = isTotal ? '#333' : (dimmed ? '#bbb' : (v > 0 ? '#555' : '#ccc'));
         const cellColor = row.color || defaultColor;
-        h += '<td style="' + dataTd + ';' + rowBorder + weight + italic + 'color:' + cellColor + '">' + (v ? fmtDollar(v) : '\u2014') + '</td>';
+        h += '<td style="' + dataTd + ';' + rowBorder + weight + italic + strike + 'color:' + cellColor + '">' + (v && !excluded ? fmtDollar(v) : excluded ? fmtDollar(0) : '\u2014') + '</td>';
       }
       h += '</tr>';
     }
@@ -135380,10 +135535,8 @@ function buildProjDetail(ticker, key) {
 
   // ── CASH ON HAND ──────────────────────────────────────────────────────
   case 'cashOnHand': {
-    const inclRestr = document.getElementById('liqIncludeRestricted') && document.getElementById('liqIncludeRestricted').checked;
     const cd = liq.cash_detail || {};
-    const gid = 'proj-gear-cash';
-    let h = hdrRow('Cash on Hand \u2014 Component Breakdown', gearBtn(gid));
+    let h = hdrRow('Cash on Hand \u2014 Component Breakdown');
     const LABELS = {
       cash: 'Cash', cash_equivalents: 'Cash equivalents',
       cash_and_cash_equivalents: 'Cash & cash equivalents',
@@ -135394,52 +135547,54 @@ function buildProjDetail(ticker, key) {
       restricted_cash_equivalents: 'Restricted cash equivalents',
       restricted_cash_and_equivalents: 'Restricted cash & equivalents',
     };
-    const unrKeys = ['cash', 'cash_and_cash_equivalents', 'cash_equivalents',
-                     'foreign_currencies', 'foreign_cash', 'foreign_currency_at_fair_value'];
-    const resKeys = ['restricted_cash', 'restricted_cash_equivalents', 'restricted_cash_and_equivalents'];
-    // Cumulative values: cash on hand is a year-1 opening balance that persists
-    // across all cumulative columns (no new additions in later years).
+    // Always surface every possible component; include-restricted is now
+    // controlled by line-item strikethrough on the restricted rows.
+    const orderedKeys = [
+      'cash', 'cash_equivalents', 'cash_and_cash_equivalents',
+      'foreign_currencies', 'foreign_cash', 'foreign_currency_at_fair_value',
+      'restricted_cash', 'restricted_cash_equivalents', 'restricted_cash_and_equivalents',
+    ];
     const allYears = values => { const o = {}; for (const yr of years) o[yr] = values; return o; };
     const rows = [];
-    let hasAny = false;
-    if (Object.keys(cd).length > 0) {
-      for (const k of unrKeys) {
-        if (cd[k]) { rows.push({ label: LABELS[k] || k, values: allYears(cd[k]), indent: true }); hasAny = true; }
-      }
-      for (const k of resKeys) {
-        if (cd[k]) {
-          if (inclRestr) rows.push({ label: LABELS[k] || k, values: allYears(cd[k]), indent: true, color: '#996633' });
-          else rows.push({ label: LABELS[k] + ' (excluded)', values: allYears(cd[k]), indent: true, dimmed: true });
-          hasAny = true;
-        }
-      }
+    let effectiveTotal = 0;
+    for (const k of orderedKeys) {
+      const v = cd[k];
+      if (!v) continue;
+      const isRestricted = k.indexOf('restricted') === 0;
+      rows.push({
+        parentKey: 'cashOnHand', lineKey: k,
+        label: LABELS[k] || k,
+        values: allYears(v), indent: true,
+        color: isRestricted ? '#996633' : undefined,
+      });
+      if (!isLineExcluded('cashOnHand', k)) effectiveTotal += v;
     }
-    if (!hasAny) {
-      // Fallback when the scraper didn't surface component-level keys
-      rows.push({ label: 'Cash & cash equivalents', values: allYears(liq.cash), indent: true });
+    if (rows.length === 0) {
+      // Fallback when the scraper hasn't populated the finest breakdown
+      rows.push({
+        parentKey: 'cashOnHand', lineKey: 'cash',
+        label: 'Cash & cash equivalents', values: allYears(liq.cash), indent: true,
+      });
       if (liq.restricted_cash > 0) {
-        if (inclRestr) rows.push({ label: 'Restricted cash', values: allYears(liq.restricted_cash), indent: true, color: '#996633' });
-        else rows.push({ label: 'Restricted cash (excluded)', values: allYears(liq.restricted_cash), indent: true, dimmed: true });
+        rows.push({
+          parentKey: 'cashOnHand', lineKey: 'restricted_cash',
+          label: 'Restricted cash', values: allYears(liq.restricted_cash),
+          indent: true, color: '#996633',
+        });
       }
+      effectiveTotal = liq.cash + (isLineExcluded('cashOnHand', 'restricted_cash') ? 0 : (liq.restricted_cash || 0));
     }
     rows.push({ separator: true });
-    rows.push({ total: true, label: 'Cumulative cash on hand', values: allYears(cf.cash_on_hand), color: '#2d8a56' });
+    rows.push({ total: true, label: 'Effective cash on hand', values: allYears(effectiveTotal), color: '#2d8a56' });
     h += miniTable(rows);
-    h += rawRow(
-      '<div id="' + gid + '" style="display:none;margin-top:4px;padding:6px 10px;background:#f5f5f0;border-radius:4px;border:1px solid #e0e0dc">' +
-      '<label style="font-size:11px;color:#666;display:flex;align-items:center;gap:6px;cursor:pointer">' +
-      '<input type="checkbox" ' + (inclRestr ? 'checked' : '') + ' onchange="document.getElementById(\'liqIncludeRestricted\').checked=this.checked;renderLiquidityTab()" style="cursor:pointer">' +
-      'Include restricted cash</label></div>'
-    );
-    h += srcRow('Source: SEC EDGAR balance-sheet line items (as filed)');
-    h += noteRow('Year-1 opening balance; carried forward through each cumulative column.');
+    h += srcRow('Source: SEC EDGAR balance-sheet line items (as filed) \u2014 finest split each filing discloses.');
+    h += noteRow('Year-1 opening balance carried forward. Click \u2715 to exclude a component, \u21BA to restore.');
     return h;
   }
 
   // ── UNDRAWN REVOLVERS ─────────────────────────────────────────────────
   case 'revolverCapacity': {
-    const gid = 'proj-gear-rev';
-    let h = hdrRow('Undrawn Revolvers \u2014 Facility Detail', gearBtn(gid));
+    let h = hdrRow('Undrawn Revolvers \u2014 Facility Detail');
     const revs = (liq.debt_instruments || []).filter(i => i.type === 'revolving_credit' || i.type === 'secured_credit_facility');
     const riskPct = typeof liqRevolverRisk !== 'undefined' ? liqRevolverRisk : 0;
     const rows = [];
@@ -135447,29 +135602,23 @@ function buildProjDetail(ticker, key) {
     for (const yr of years) totalsByYear[yr] = 0;
     for (const inst of revs) {
       const u = (inst.undrawn || 0) * (1 - riskPct / 100);
-      // Parent row treats undrawn capacity as a year-1 inflow carried forward.
-      // Maturity-driven repayment of the drawn balance is captured separately
-      // under revolverRepayment.
       const vals = {};
-      for (const yr of years) { vals[yr] = u; totalsByYear[yr] += u; }
+      for (const yr of years) vals[yr] = u;
+      const included = !isLineExcluded('revolverCapacity', inst.name);
+      if (included) for (const yr of years) totalsByYear[yr] += u;
       const meta = [inst.interest_rate, inst.maturity_date ? 'mat. ' + inst.maturity_date : ''].filter(Boolean).join(' \u00b7 ');
-      rows.push({ label: inst.name, values: vals, indent: true, note: meta });
+      rows.push({ parentKey: 'revolverCapacity', lineKey: inst.name,
+        label: inst.name, values: vals, indent: true, note: meta });
     }
     if (revs.length === 0) {
       h += rawRow('<div style="color:#999;font-size:11px;padding:4px 0">No revolving facilities found</div>');
     } else {
       rows.push({ separator: true });
-      rows.push({ total: true, label: 'Net revolver capacity' + (riskPct > 0 ? ' (after ' + riskPct + '% risk adj)' : ''), values: totalsByYear, color: '#2c6fbb' });
+      rows.push({ total: true, label: 'Net revolver capacity' + (riskPct > 0 ? ' (after ' + riskPct + '% haircut)' : ''), values: totalsByYear, color: '#2c6fbb' });
       h += miniTable(rows);
     }
-    h += rawRow(
-      '<div id="' + gid + '" style="display:none;margin-top:4px;padding:6px 10px;background:#f5f5f0;border-radius:4px;border:1px solid #e0e0dc">' +
-      '<label style="font-size:11px;color:#666;display:flex;align-items:center;gap:8px">' +
-      'Revolver risk: <input type="range" min="0" max="100" value="' + riskPct + '" style="flex:1" oninput="this.nextElementSibling.textContent=this.value+\'%\'" onchange="liqRevolverRisk=parseInt(this.value);renderLiquidityTab()"> <span>' + riskPct + '%</span>' +
-      '</label></div>'
-    );
-    h += srcRow('Source: Balance sheet \u2014 revolving credit facilities');
-    h += noteRow('Undrawn capacity carried forward through each cumulative column.');
+    h += srcRow('Source: Balance sheet \u2014 revolving credit facilities. Adjust capacity haircut in the Liquidity Assumptions panel above.');
+    h += noteRow('Click \u2715 to exclude a facility; \u21BA to restore.');
     return h;
   }
 
@@ -135503,15 +135652,21 @@ function buildProjDetail(ticker, key) {
       return out;
     };
     const rows = [];
+    // Rebuild the cumulative "effective" total net of any excluded seniority
+    // buckets so the totals row matches the chart.
+    const effectiveAnnual = {}; for (const yr of years) effectiveAnnual[yr] = 0;
     for (const sen of sortSen(Object.keys(bySenAnnual))) {
       if (!Object.values(bySenAnnual[sen]).some(v => v > 0)) continue;
-      rows.push({ label: senLabels[sen] || sen, values: toCumulative(bySenAnnual[sen]), indent: true });
+      const included = !isLineExcluded('cashInterest', sen);
+      if (included) for (const yr of years) effectiveAnnual[yr] += bySenAnnual[sen][yr] || 0;
+      rows.push({ parentKey: 'cashInterest', lineKey: sen,
+        label: senLabels[sen] || sen, values: toCumulative(bySenAnnual[sen]), indent: true });
     }
     rows.push({ separator: true });
-    rows.push({ total: true, label: 'Cumulative interest (post-stress)', values: toCumulative(annualTotals), color: '#2d8a56' });
+    rows.push({ total: true, label: 'Cumulative interest (post-stress)', values: toCumulative(effectiveAnnual), color: '#2d8a56' });
     h += miniTable(rows);
     if (cf.rate_coverage_pct < 100) h += srcRow('\u26a0 ' + cf.rate_coverage_pct.toFixed(0) + '% explicit rate coverage \u2014 ' + (100 - cf.rate_coverage_pct).toFixed(0) + '% imputed at ' + cf.portfolio_avg_rate.toFixed(1) + '%');
-    h += srcRow('Source: SOI filings \u2014 position-level rates \u00d7 par amounts');
+    h += srcRow('Source: SOI filings \u2014 position-level rates \u00d7 par amounts. Click \u2715 to exclude a seniority bucket.');
     return h;
   }
 
@@ -135540,25 +135695,28 @@ function buildProjDetail(ticker, key) {
       return out;
     };
     const rows = [];
+    const effectiveAnnual = {}; for (const yr of years) effectiveAnnual[yr] = 0;
     for (const sen of sortSen(Object.keys(bySenAnnual))) {
       if (!Object.values(bySenAnnual[sen]).some(v => v > 0)) continue;
-      rows.push({ label: senLabels[sen] || sen, values: toCumulative(bySenAnnual[sen]), indent: true });
+      const included = !isLineExcluded('principalRepayments', sen);
+      if (included) for (const yr of years) effectiveAnnual[yr] += bySenAnnual[sen][yr] || 0;
+      rows.push({ parentKey: 'principalRepayments', lineKey: sen,
+        label: senLabels[sen] || sen, values: toCumulative(bySenAnnual[sen]), indent: true });
     }
     rows.push({ separator: true });
-    rows.push({ total: true, label: 'Cumulative repayments (post-stress)', values: toCumulative(annualTotals), color: '#2d8a56' });
+    rows.push({ total: true, label: 'Cumulative repayments (post-stress)', values: toCumulative(effectiveAnnual), color: '#2d8a56' });
     h += miniTable(rows);
     h += srcRow('Source: SOI filings \u2014 par amounts \u00d7 maturity dates');
-    h += noteRow('New positions first appear in the column matching their maturity year.');
+    h += noteRow('Click \u2715 to exclude a seniority bucket; \u21BA to restore.');
     return h;
   }
 
   // ── DIVIDENDS ─────────────────────────────────────────────────────────
   case 'dividend': {
-    const gid = 'proj-gear-div';
     computeStress();
     const ploss = (_computed && _computed.lossByBDC && _computed.lossByBDC[ticker]) || 0;
     const postEq = Math.max(0, cf.equity - ploss);
-    let h = hdrRow('Dividends \u2014 Calculation', gearBtn(gid));
+    let h = hdrRow('Dividends \u2014 Calculation');
     // One-time stress-loss ledger (unchanged — user likes this layout).
     let ledger = '<div style="max-width:520px;font-size:12px">';
     ledger += ledgerLine('Book equity', cf.equity, '');
@@ -135598,13 +135756,7 @@ function buildProjDetail(ticker, key) {
       { separator: true },
       { total: true, label: 'Cumulative dividends paid', values: cumDiv, color: '#a33' },
     ]);
-    h += rawRow(
-      '<div id="' + gid + '" style="display:none;margin-top:4px;padding:6px 10px;background:#f5f5f0;border-radius:4px;border:1px solid #e0e0dc">' +
-      '<label style="font-size:11px;color:#666;display:flex;align-items:center;gap:8px">' +
-      'Dividend rate: <input type="range" min="0" max="20" step="0.5" value="' + liqDividendRate + '" style="flex:1" oninput="this.nextElementSibling.textContent=this.value+\'%/qtr\'" onchange="liqDividendRate=parseFloat(this.value);document.getElementById(\'liq-div-r\').value=this.value;document.getElementById(\'liq-div-n\').value=this.value;renderLiquidityTab()"> <span>' + liqDividendRate + '%/qtr</span>' +
-      '</label></div>'
-    );
-    h += srcRow('Dividend varies per year as equity evolves with net interest income − dividends paid. Equity pulled from stress-model output, not hardcoded.');
+    h += srcRow('Dividend varies per year as equity evolves with net interest income \u2212 dividends paid. Equity and income pulled from stress-model output. Adjust the rate in the Liquidity Assumptions panel above.');
     return h;
   }
 
@@ -135616,17 +135768,20 @@ function buildProjDetail(ticker, key) {
     const liqByName = {};
     for (const d of (liq.debt_instruments || [])) liqByName[d.name] = d;
     const rows = [], beyondWindow = [], repaidList = [];
+    const effectiveAnnual = {}; for (const yr of years) effectiveAnnual[yr] = 0;
     for (const note of notes) {
       if (note.repaid) { repaidList.push(note); continue; }
       const li = liqByName[note.name];
       const rateStr = li && li.interest_rate ? li.interest_rate : '';
-      // Tranched maturity (rare for unsecured notes but honor the schema).
       if (note.maturity_schedule && note.maturity_schedule.length > 0) {
         for (const tr of note.maturity_schedule) {
           const tyr = tr.maturity_year;
           if (!tyr || tyr > years[years.length - 1]) continue;
           const vals = {}; for (const yr of years) vals[yr] = yr >= tyr ? (tr.outstanding_dollars || 0) : 0;
-          rows.push({ label: note.name + ' tranche', values: vals, indent: true,
+          const lineKey = note.name + ' @ ' + (tr.maturity_date || tyr);
+          if (!isLineExcluded('debtRepayment', lineKey)) effectiveAnnual[tyr] = (effectiveAnnual[tyr] || 0) + (tr.outstanding_dollars || 0);
+          rows.push({ parentKey: 'debtRepayment', lineKey,
+            label: note.name + ' tranche', values: vals, indent: true,
             note: (tr.interest_rate || rateStr) + ' \u00b7 ' + (tr.maturity_date || tyr) });
         }
         continue;
@@ -135636,11 +135791,13 @@ function buildProjDetail(ticker, key) {
       const vals = {};
       for (const yr of years) vals[yr] = yr >= note.maturity_year ? note.outstanding : 0;
       const matStr = li && li.maturity_date ? li.maturity_date : String(note.maturity_year);
-      rows.push({ label: note.name, values: vals, indent: true, note: rateStr ? rateStr + ' \u00b7 ' + matStr : matStr });
+      if (!isLineExcluded('debtRepayment', note.name)) effectiveAnnual[note.maturity_year] = (effectiveAnnual[note.maturity_year] || 0) + note.outstanding;
+      rows.push({ parentKey: 'debtRepayment', lineKey: note.name,
+        label: note.name, values: vals, indent: true, note: rateStr ? rateStr + ' \u00b7 ' + matStr : matStr });
     }
-    // Cumulative totals from the annual repayment schedule.
+    // Cumulative totals net of any excluded lines.
     const totals = {}; let run = 0;
-    for (const yr of years) { run += cf.bdc_debt.repayment_schedule[String(yr)] || 0; totals[yr] = run; }
+    for (const yr of years) { run += effectiveAnnual[yr] || 0; totals[yr] = run; }
     rows.push({ separator: true });
     rows.push({ total: true, label: 'Cumulative repayment', values: totals, color: '#a33' });
     h += miniTable(rows);
@@ -135665,19 +135822,20 @@ function buildProjDetail(ticker, key) {
     const sources = revs.length > 0 ? revs : (liq.debt_instruments || []).filter(i => i.type === 'revolving_credit' || i.type === 'secured_credit_facility');
     const rows = [];
     const endYr = years[years.length - 1];
+    const effectiveAnnual = {}; for (const yr of years) effectiveAnnual[yr] = 0;
     for (const rev of sources) {
       if (rev.repaid) continue;
       const liqInst = (liq.debt_instruments || []).find(d => d.name === rev.name) || rev;
       const rateStr = liqInst.interest_rate || '';
-      // Tranched revolvers (e.g., ARCC RCF, OBDC RCF): render each tranche
-      // on its own row at its own maturity year.
       if (rev.maturity_schedule && rev.maturity_schedule.length > 0) {
         for (const tr of rev.maturity_schedule) {
           const tyr = tr.maturity_year;
           if (!tyr || tyr > endYr) continue;
           const vals = {}; for (const yr of years) vals[yr] = yr >= tyr ? (tr.outstanding_dollars || 0) : 0;
+          const lineKey = rev.name + ' @ ' + (tr.maturity_date || tyr);
           const label = rev.name + ' \u2014 ' + (tr.maturity_date || tyr) + ' tranche';
-          rows.push({ label, values: vals, indent: true,
+          if (!isLineExcluded('revolverRepayment', lineKey)) effectiveAnnual[tyr] = (effectiveAnnual[tyr] || 0) + (tr.outstanding_dollars || 0);
+          rows.push({ parentKey: 'revolverRepayment', lineKey, label, values: vals, indent: true,
             note: (tr.interest_rate || rateStr) + ' \u00b7 $' + ((tr.outstanding_dollars || 0) / 1e6).toFixed(1) + 'M drawn' });
         }
         continue;
@@ -135687,19 +135845,21 @@ function buildProjDetail(ticker, key) {
       const outstanding = rev.outstanding || 0;
       const vals = {}; for (const yr of years) vals[yr] = yr >= matYr ? outstanding : 0;
       const matStr = liqInst.maturity_date || String(matYr);
-      rows.push({ label: rev.name, values: vals, indent: true, note: rateStr ? rateStr + ' \u00b7 ' + matStr : matStr });
+      if (!isLineExcluded('revolverRepayment', rev.name)) effectiveAnnual[matYr] = (effectiveAnnual[matYr] || 0) + outstanding;
+      rows.push({ parentKey: 'revolverRepayment', lineKey: rev.name,
+        label: rev.name, values: vals, indent: true, note: rateStr ? rateStr + ' \u00b7 ' + matStr : matStr });
     }
     if (rows.length === 0) {
       h += rawRow('<div style="color:#999;font-size:11px;padding:4px 0">No revolving facility maturities in projection window</div>');
       return h;
     }
     const totals = {}; let run = 0;
-    for (const yr of years) { run += (cf.bdc_debt.revolver_repayment_schedule || {})[String(yr)] || 0; totals[yr] = run; }
+    for (const yr of years) { run += effectiveAnnual[yr] || 0; totals[yr] = run; }
     rows.push({ separator: true });
     rows.push({ total: true, label: 'Cumulative repayment', values: totals, color: '#a33' });
     h += miniTable(rows);
-    h += srcRow('Source: Balance sheet \u2014 revolving facilities (outstanding at maturity)');
-    h += noteRow('Outstanding drawn balance repaid at maturity; carried forward.');
+    h += srcRow('Source: Balance sheet \u2014 revolving facilities (outstanding at maturity).');
+    h += noteRow('Click \u2715 to exclude a facility/tranche.');
     return h;
   }
 
@@ -135713,6 +135873,7 @@ function buildProjDetail(ticker, key) {
       { label: 'CLO Notes', filter: i => i.is_clo },
     ];
     const rows = [];
+    const effectiveAnnual = {}; for (const yr of years) effectiveAnnual[yr] = 0;
     for (const g of groups) {
       const insts = instruments.filter(g.filter).filter(i => !i.repaid);
       if (insts.length === 0) continue;
@@ -135720,31 +135881,30 @@ function buildProjDetail(ticker, key) {
       for (const inst of insts) {
         const liqInst = (liq.debt_instruments || []).find(d => d.name === inst.name);
         const rateStr = liqInst && liqInst.interest_rate ? liqInst.interest_rate : '';
-        // Tranched instruments: aggregate cumulative interest across tranches,
-        // each tranche stopping at its own maturity year.
-        if (inst.maturity_schedule && inst.maturity_schedule.length > 0) {
-          const vals = {}; let run = 0;
-          const totalOut = inst.maturity_schedule.reduce((s, t) => s + (t.outstanding_dollars || 0), 0) || inst.outstanding || 1;
-          for (const yr of years) {
+        const annualFor = yr => {
+          if (inst.maturity_schedule && inst.maturity_schedule.length > 0) {
+            const totalOut = inst.maturity_schedule.reduce((s, t) => s + (t.outstanding_dollars || 0), 0) || inst.outstanding || 1;
+            let a = 0;
             for (const tr of inst.maturity_schedule) {
               const tyr = tr.maturity_year;
               if (!tyr || tyr < yr) continue;
-              // Proportional annual interest for this tranche.
-              run += (inst.annual_interest || 0) * ((tr.outstanding_dollars || 0) / totalOut);
+              a += (inst.annual_interest || 0) * ((tr.outstanding_dollars || 0) / totalOut);
             }
-            vals[yr] = run;
+            return a;
           }
-          rows.push({ label: inst.name + ' (tranched)', values: vals, indent: true, note: rateStr });
-          continue;
-        }
+          if (!inst.maturity_year || inst.maturity_year >= yr) return inst.annual_interest || 0;
+          return 0;
+        };
         const vals = {}; let run = 0;
-        for (const yr of years) {
-          if (!inst.maturity_year || inst.maturity_year >= yr) run += inst.annual_interest || 0;
-          vals[yr] = run;
+        for (const yr of years) { run += annualFor(yr); vals[yr] = run; }
+        const isTranched = inst.maturity_schedule && inst.maturity_schedule.length > 0;
+        const matStr = isTranched ? '' : (inst.maturity_year ? 'mat. ' + (liqInst && liqInst.maturity_date ? liqInst.maturity_date : inst.maturity_year) : '');
+        const note = [rateStr, matStr, isTranched ? 'tranched' : ''].filter(Boolean).join(' \u00b7 ');
+        if (!isLineExcluded('debtInterest', inst.name)) {
+          for (const yr of years) effectiveAnnual[yr] += annualFor(yr);
         }
-        const matStr = inst.maturity_year ? 'mat. ' + (liqInst && liqInst.maturity_date ? liqInst.maturity_date : inst.maturity_year) : '';
-        const note = [rateStr, matStr].filter(Boolean).join(' \u00b7 ');
-        rows.push({ label: inst.name, values: vals, indent: true, note });
+        rows.push({ parentKey: 'debtInterest', lineKey: inst.name,
+          label: inst.name, values: vals, indent: true, note });
       }
     }
     const repaidInstruments = instruments.filter(i => i.repaid);
@@ -135753,7 +135913,7 @@ function buildProjDetail(ticker, key) {
       rows.push({ sectionHeader: true, label: 'Excluded (repaid post-balance-sheet date): ' + msg });
     }
     const totals = {}; let run = 0;
-    for (const yr of years) { run += cf.bdc_debt.interest_schedule[String(yr)] || 0; totals[yr] = run; }
+    for (const yr of years) { run += effectiveAnnual[yr] || 0; totals[yr] = run; }
     rows.push({ separator: true });
     rows.push({ total: true, label: 'Cumulative interest', values: totals, color: '#a33' });
     h += miniTable(rows);
@@ -135766,56 +135926,43 @@ function buildProjDetail(ticker, key) {
 
   // ── UNFUNDED DRAWS ────────────────────────────────────────────────────
   case 'unfundedDraw': {
-    const gid = 'proj-gear-unfunded';
-    let h = hdrRow('Unfunded Draws \u2014 Stress Calculation', gearBtn(gid));
+    let h = hdrRow('Unfunded Draws \u2014 Stress Calculation');
     const details = liq.unfunded_detail || [];
     const drawRate = liqDrawRate / 100;
     const contingentRate = liqContingentRate / 100;
     const rows = [];
     const allYears = v => { const o = {}; for (const yr of years) o[yr] = v; return o; };
-    let borrowerStressed = 0, contingentStressed = 0;
+    let totalStressed = 0;
     const borrowerRows = [], contingentRows = [];
     for (const d of details) {
       const ctype = d.commitment_type || 'borrower_drawable';
-      if (ctype === 'bdc_contingent') {
-        const v = d.amount * contingentRate;
-        contingentStressed += v;
-        contingentRows.push({ label: d.section, values: allYears(v), indent: true,
-          note: '$' + (d.amount / 1e6).toFixed(0) + 'M \u00d7 ' + liqContingentRate + '%' });
-      } else {
-        const v = d.amount * drawRate;
-        borrowerStressed += v;
-        borrowerRows.push({ label: d.section, values: allYears(v), indent: true,
-          note: '$' + (d.amount / 1e6).toFixed(0) + 'M \u00d7 ' + liqDrawRate + '%' });
-      }
+      const rate = ctype === 'bdc_contingent' ? contingentRate : drawRate;
+      const ratePct = ctype === 'bdc_contingent' ? liqContingentRate : liqDrawRate;
+      const v = d.amount * rate;
+      const row = { parentKey: 'unfundedDraw', lineKey: d.section,
+        label: d.section, values: allYears(v), indent: true,
+        note: '$' + (d.amount / 1e6).toFixed(0) + 'M \u00d7 ' + ratePct + '%' };
+      if (!isLineExcluded('unfundedDraw', d.section)) totalStressed += v;
+      if (ctype === 'bdc_contingent') contingentRows.push(row);
+      else borrowerRows.push(row);
     }
     if (borrowerRows.length > 0) {
-      rows.push({ sectionHeader: true, label: 'Borrower-drawable (revolvers / delayed-draw loans)' });
+      rows.push({ sectionHeader: true, label: 'Borrower-drawable (revolvers / delayed-draw loans) \u2014 ' + liqDrawRate + '% rate' });
       rows.push(...borrowerRows);
     }
     if (contingentRows.length > 0) {
-      rows.push({ sectionHeader: true, label: 'BDC-contingent (equity / JV commitments)' });
+      rows.push({ sectionHeader: true, label: 'BDC-contingent (equity / JV commitments) \u2014 ' + liqContingentRate + '% rate' });
       rows.push(...contingentRows);
     }
     if (borrowerRows.length === 0 && contingentRows.length === 0) {
       rows.push({ label: 'Total unfunded commitments', values: allYears(cf.unfunded_total * drawRate), indent: true });
-      borrowerStressed = cf.unfunded_total * drawRate;
+      totalStressed = cf.unfunded_total * drawRate;
     }
-    const stressed = borrowerStressed + contingentStressed;
     rows.push({ separator: true });
-    rows.push({ total: true, label: 'Cumulative stressed draw', values: allYears(stressed), color: '#a33' });
+    rows.push({ total: true, label: 'Cumulative stressed draw', values: allYears(totalStressed), color: '#a33' });
     h += miniTable(rows);
-    h += rawRow(
-      '<div id="' + gid + '" style="display:none;margin-top:4px;padding:6px 10px;background:#f5f5f0;border-radius:4px;border:1px solid #e0e0dc">' +
-      '<label style="font-size:11px;color:#666;display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
-      'Borrower draw: <input type="range" min="0" max="100" value="' + liqDrawRate + '" style="flex:1" oninput="this.nextElementSibling.textContent=this.value+\'%\'" onchange="liqDrawRate=parseFloat(this.value);document.getElementById(\'liq-draw-r\').value=this.value;document.getElementById(\'liq-draw-n\').value=this.value;renderLiquidityTab()"> <span>' + liqDrawRate + '%</span>' +
-      '</label>' +
-      '<label style="font-size:11px;color:#666;display:flex;align-items:center;gap:8px">' +
-      'Contingent draw: <input type="range" min="0" max="100" value="' + liqContingentRate + '" style="flex:1" oninput="this.nextElementSibling.textContent=this.value+\'%\'" onchange="liqContingentRate=parseFloat(this.value);var r=document.getElementById(\'liq-contingent-r\');var n=document.getElementById(\'liq-contingent-n\');if(r)r.value=this.value;if(n)n.value=this.value;renderLiquidityTab()"> <span>' + liqContingentRate + '%</span>' +
-      '</label></div>'
-    );
-    h += srcRow('Source: SOI filings \u2014 unfunded commitments schedule');
-    h += noteRow('Immediate year-1 draw; carried forward through each cumulative column. Separate rates because equity/JV commitments are BDC-controlled, not borrower-initiated.');
+    h += srcRow('Source: SOI filings \u2014 unfunded commitments schedule. Adjust borrower/contingent rates in the Liquidity Assumptions panel above.');
+    h += noteRow('Immediate year-1 draw; carried forward through each cumulative column. Click \u2715 to exclude an individual section.');
     return h;
   }
 
@@ -136811,7 +136958,7 @@ setTimeout(() => {
 (function() {
   const el = document.createElement('div');
   el.style.cssText = 'position:fixed;bottom:8px;right:12px;font-size:10px;color:#999;z-index:1000;pointer-events:none';
-  const deployTs = 'Apr 16, 2026 10:40 AM ';
+  const deployTs = 'Apr 16, 2026 11:04 AM ';
   if (deployTs.startsWith('__')) {
     el.textContent = 'Local dev';
   } else {
