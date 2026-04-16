@@ -1154,7 +1154,7 @@
             </div>
           </div>
           <div>
-            <div class="slider-row"><span class="slider-label">Dividend Rate <span class="info-btn" data-info="liqDiv" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="15" value="10" step="0.5" id="liq-div-r"><input type="number" min="0" max="15" value="10" step="0.5" id="liq-div-n"><span class="pct-suffix">%</span></div>
+            <div class="slider-row"><span class="slider-label">Dividend Rate /qtr <span class="info-btn" data-info="liqDiv" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="20" value="5" step="0.5" id="liq-div-r"><input type="number" min="0" max="20" value="5" step="0.5" id="liq-div-n"><span class="pct-suffix">%</span></div>
             <div class="info-popup" data-popup="liqDiv" style="display:none">
               <p><strong>Dividend Rate</strong> — annual dividend as % of post-stress equity.</p>
               <p>BDCs must distribute 90%+ of taxable income to maintain RIC tax status. This is a mandatory cash drain that can't easily be stopped even in stress. The rate is applied to post-stress equity, so larger portfolio losses automatically reduce the dividend burden.</p>
@@ -32561,6 +32561,13 @@ const DATA = {
       ],
       "unsecured_instruments": [
         {
+          "name": "Adviser Revolver",
+          "amount": 0,
+          "type": "revolving_credit",
+          "rate": "3.700%",
+          "maturity": "June 13, 2032"
+        },
+        {
           "name": "2026 Notes",
           "amount": 599658000,
           "type": "unsecured_notes",
@@ -33872,6 +33879,17 @@ const DATA = {
           "interest_rate": "SOFR + 1.525% to 1.775% (tiered)"
         },
         {
+          "name": "Adviser Revolver",
+          "type": "revolving_credit",
+          "secured": false,
+          "outstanding": 0,
+          "total_commitment": 300000000,
+          "undrawn": 300000000,
+          "maturity_date": "2032-06-13",
+          "maturity_year": 2032,
+          "interest_rate": "3.700%"
+        },
+        {
           "name": "2026 Notes",
           "type": "unsecured_notes",
           "secured": false,
@@ -33916,7 +33934,7 @@ const DATA = {
           "interest_rate": "6.000%"
         }
       ],
-      "total_undrawn_revolver": 881774000,
+      "total_undrawn_revolver": 1181774000,
       "near_term_maturities_2yr": 948835000,
       "unfunded_total": 815900000,
       "unfunded_detail": [
@@ -38702,6 +38720,13 @@ const DATA = {
             "is_clo": false
           },
           {
+            "name": "Adviser Revolver",
+            "maturity_year": 2032,
+            "outstanding": 0,
+            "annual_interest": 0,
+            "is_clo": false
+          },
+          {
             "name": "2026 Notes",
             "maturity_year": 2026,
             "outstanding": 599658000,
@@ -38733,7 +38758,7 @@ const DATA = {
       },
       "equity": 3909154000,
       "cash_on_hand": 93969000,
-      "undrawn_revolvers": 881774000,
+      "undrawn_revolvers": 1181774000,
       "unfunded_total": 815900000,
       "portfolio_avg_rate": 8.51,
       "rate_coverage_pct": 98.4
@@ -134052,6 +134077,58 @@ function renderCoverageChart(tickers, liqResults) {
   });
 }
 
+function showLiqAudit(ticker) {
+  const liq = DATA.liquidity[ticker];
+  if (!liq) return;
+  const rc = DATA.rates_curve || {};
+  const row = (label, val, color) => '<tr style="border-bottom:1px solid #eee"><td style="padding:5px 10px;color:#666">' + label + '</td><td style="padding:5px 10px;text-align:right;font-weight:600;color:' + (color || '#333') + '">' + fmtDollar(val) + '</td></tr>';
+  const hdr = (text) => '<tr><td colspan="2" style="padding:10px 10px 4px;font-weight:700;color:#555;border-bottom:2px solid #ddd">' + text + '</td></tr>';
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:13px">';
+
+  // Cash breakdown
+  html += hdr('Cash (XBRL-verified)');
+  html += row('Unrestricted cash & equivalents', liq.cash);
+  html += row('Restricted cash', liq.restricted_cash, '#999');
+  html += row('Total cash', liq.cash + liq.restricted_cash);
+
+  // Credit facilities
+  html += hdr('Credit Facilities');
+  let totalUndrawn = 0;
+  for (const inst of liq.debt_instruments) {
+    if (inst.type !== 'revolving_credit' && inst.type !== 'secured_credit_facility') continue;
+    const u = inst.undrawn || 0;
+    totalUndrawn += u;
+    const note = inst.note ? ' *' : '';
+    html += '<tr style="border-bottom:1px solid #eee"><td style="padding:5px 10px;color:#666">' + inst.name + note + '</td>';
+    html += '<td style="padding:5px 10px;text-align:right;font-size:11px;color:#555">';
+    html += '<span style="color:#333;font-weight:600">' + fmtDollar(u) + '</span> avail';
+    if (inst.outstanding) html += ' / ' + fmtDollar(inst.outstanding) + ' drawn';
+    html += '</td></tr>';
+  }
+  html += row('Total undrawn capacity', totalUndrawn, '#2c6fbb');
+
+  // Unfunded commitments
+  html += hdr('Unfunded Commitments (to portfolio cos.)');
+  for (const d of (liq.unfunded_detail || [])) {
+    html += row(d.section, d.amount);
+  }
+  html += row('Total unfunded', liq.unfunded_total, '#c0392b');
+
+  // Near-term maturities
+  html += hdr('Near-Term Debt Maturities (\u22642yr)');
+  for (const inst of liq.debt_instruments) {
+    if (inst.type === 'clo' || inst.type === 'revolving_credit' || inst.type === 'secured_credit_facility') continue;
+    if (!inst.maturity_year || inst.maturity_year > 2027) continue;
+    html += row(inst.name + ' (' + (inst.maturity_date || inst.maturity_year) + ')', inst.outstanding);
+  }
+  html += row('Total near-term maturities', liq.near_term_maturities_2yr, '#c0392b');
+
+  // Source
+  html += '<tr><td colspan="2" style="padding:10px 10px 4px;font-size:10px;color:#aaa">Source: SEC EDGAR XBRL (cash), 10-K/10-Q filings (facilities, commitments). SOFR ' + (rc.sofr || '?') + '% as of ' + (rc.sofr_date || '?') + '.</td></tr>';
+  html += '</table>';
+  showLiqModal(ticker + ' — Liquidity Audit', html);
+}
+
 function renderLiqWaterfall(tickers, liqResults) {
   const container = document.getElementById('liqWaterfallTable');
   if (!container) return;
@@ -134064,6 +134141,7 @@ function renderLiqWaterfall(tickers, liqResults) {
   html += '<th style="' + td + ';font-weight:600;color:#666">Unfunded Draws</th>';
   html += '<th style="' + td + ';font-weight:600;color:#666">Near-Term Maturities</th>';
   html += '<th style="' + td + ';font-weight:600;color:#666">Net Liquidity</th>';
+  html += '<th style="' + td + ';font-weight:600;color:#666"></th>';
   html += '</tr></thead><tbody>';
   for (const t of tickers) {
     const r = liqResults[t];
@@ -134077,6 +134155,7 @@ function renderLiqWaterfall(tickers, liqResults) {
     html += '<td style="' + td + ';color:#c0392b">(' + fmtDollar(r.stressedDraw) + ')</td>';
     html += '<td style="' + td + ';color:#c0392b">(' + fmtDollar(r.nearTermMat) + ')</td>';
     html += '<td style="' + td + ';font-weight:700;font-size:14px;color:' + netColor + '">' + fmtDollar(r.netLiq) + '</td>';
+    html += '<td style="' + td + ';text-align:center"><button onclick="showLiqAudit(\'' + t + '\')" style="background:none;border:1px solid #ccc;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px;color:#666" title="Audit liquidity data">Audit</button></td>';
     html += '</tr>';
   }
   html += '</tbody></table>';
@@ -135635,7 +135714,7 @@ setTimeout(() => {
 (function() {
   const el = document.createElement('div');
   el.style.cssText = 'position:fixed;bottom:8px;right:12px;font-size:10px;color:#999;z-index:1000;pointer-events:none';
-  const deployTs = 'Apr 15, 2026 7:55 PM ';
+  const deployTs = 'Apr 15, 2026 8:14 PM ';
   if (deployTs.startsWith('__')) {
     el.textContent = 'Local dev';
   } else {
