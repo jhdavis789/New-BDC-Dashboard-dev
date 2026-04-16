@@ -1140,7 +1140,7 @@
         <h3>Liquidity Assumptions</h3>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
           <div>
-            <div class="slider-row"><span class="slider-label">Unfunded Draw Rate <span class="info-btn" data-info="liqDraw" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="100" value="15" id="liq-draw-r"><input type="number" min="0" max="100" value="15" id="liq-draw-n"><span class="pct-suffix">%</span></div>
+            <div class="slider-row"><span class="slider-label">Unfunded Draw Rate <span class="info-btn" data-info="liqDraw" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="100" value="100" id="liq-draw-r"><input type="number" min="0" max="100" value="100" id="liq-draw-n"><span class="pct-suffix">%</span></div>
             <div class="info-popup" data-popup="liqDraw" style="display:none">
               <p><strong>Unfunded Draw Rate</strong> — % of total unfunded commitments (revolvers, delayed draw term loans, equity commitments) assumed to be drawn by borrowers during stress.</p>
               <p>In a downturn, distressed borrowers draw down credit lines, forcing the BDC to fund new loans at par into a declining portfolio. Higher draw rates mean more cash outflow and larger balance sheet expansion at the worst time.</p>
@@ -31465,11 +31465,15 @@ const DATA = {
         },
         {
           "name": "Cash And Cash Equivalents",
-          "amount": 289605000
+          "amount": 200199000
         },
         {
           "name": "Interest Receivable From Non Controlled Non Affiliated Investments",
           "amount": 105695000
+        },
+        {
+          "name": "Restricted Cash",
+          "amount": 89406000
         },
         {
           "name": "Non Controlled Affiliated Investments",
@@ -33195,7 +33199,7 @@ const DATA = {
         },
         {
           "name": "Cash",
-          "amount": 558703000
+          "amount": 511255000
         },
         {
           "name": "Non Controlled Affiliated Investments",
@@ -33204,6 +33208,10 @@ const DATA = {
         {
           "name": "Interest And Dividend Receivable",
           "amount": 104576000
+        },
+        {
+          "name": "Restricted Cash",
+          "amount": 47448000
         },
         {
           "name": "Receivable From A Controlled Affiliate",
@@ -33447,8 +33455,8 @@ const DATA = {
       ]
     },
     "BXSL": {
-      "cash": 289605000,
-      "restricted_cash": 0,
+      "cash": 200199000,
+      "restricted_cash": 89406000,
       "debt_instruments": [
         {
           "name": "Jackson Hole Funding Facility",
@@ -33886,8 +33894,8 @@ const DATA = {
       ]
     },
     "OBDC": {
-      "cash": 568542000,
-      "restricted_cash": 0,
+      "cash": 521094000,
+      "restricted_cash": 47448000,
       "debt_instruments": [
         {
           "name": "Revolving Credit Facility",
@@ -36445,7 +36453,7 @@ const DATA = {
         ]
       },
       "equity": 6245175000,
-      "cash_on_hand": 289605000,
+      "cash_on_hand": 200199000,
       "undrawn_revolvers": 2288977000,
       "unfunded_total": 1951800000,
       "portfolio_avg_rate": 9.0,
@@ -39847,7 +39855,7 @@ const DATA = {
         ]
       },
       "equity": 7397279000,
-      "cash_on_hand": 568542000,
+      "cash_on_hand": 521094000,
       "undrawn_revolvers": 3258164000,
       "unfunded_total": 1674958000,
       "portfolio_avg_rate": 9.63,
@@ -135581,7 +135589,7 @@ setTimeout(() => {
 (function() {
   const el = document.createElement('div');
   el.style.cssText = 'position:fixed;bottom:8px;right:12px;font-size:10px;color:#999;z-index:1000;pointer-events:none';
-  const deployTs = 'Apr 15, 2026 1:33 PM ';
+  const deployTs = 'Apr 15, 2026 5:11 PM ';
   if (deployTs.startsWith('__')) {
     el.textContent = 'Local dev';
   } else {
