@@ -1154,7 +1154,7 @@
             </div>
           </div>
           <div>
-            <div class="slider-row"><span class="slider-label">Dividend Rate <span class="info-btn" data-info="liqDiv" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="15" value="5" step="0.5" id="liq-div-r"><input type="number" min="0" max="15" value="5" step="0.5" id="liq-div-n"><span class="pct-suffix">%</span></div>
+            <div class="slider-row"><span class="slider-label">Dividend Rate <span class="info-btn" data-info="liqDiv" style="font-size:12px">&#9432;</span></span><input type="range" min="0" max="15" value="10" step="0.5" id="liq-div-r"><input type="number" min="0" max="15" value="10" step="0.5" id="liq-div-n"><span class="pct-suffix">%</span></div>
             <div class="info-popup" data-popup="liqDiv" style="display:none">
               <p><strong>Dividend Rate</strong> — annual dividend as % of post-stress equity.</p>
               <p>BDCs must distribute 90%+ of taxable income to maintain RIC tax status. This is a mandatory cash drain that can't easily be stopped even in stress. The rate is applied to post-stress equity, so larger portfolio losses automatically reduce the dividend burden.</p>
@@ -1201,8 +1201,9 @@
             <p><strong>Cumulative inflows vs outflows</strong> over the 5-year projection horizon (2026-2030).
             Each year's bar includes all prior years. Stress rates from the Stress Model tab reduce both
             interest income and principal recoveries proportionally.</p>
-            <p>CLO debt is excluded from repayment obligations (match-funded). PIK income is tracked but not
-            counted as a cash inflow. Dividend rate is adjustable above (default 5% of equity).</p>
+            <p>CLO principal repayment is excluded (non-recourse, match-funded), but CLO <em>interest expense</em> is included as a cash outflow. PIK income is tracked but not
+            counted as a cash inflow. Dividend rate is adjustable above (default 10% of equity).</p>
+            <p id="liqSofrNote" style="font-style:italic;color:#666"></p>
           </div>
         </div>
         <!-- Chart -->
@@ -34167,7 +34168,7 @@ const DATA = {
             "2026": {
               "cash": 9619280,
               "pik": 0,
-              "imputed": 1798473
+              "imputed": 1803407
             },
             "2027": {
               "cash": 9780620,
@@ -34175,14 +34176,14 @@ const DATA = {
               "imputed": 0
             },
             "2028": {
-              "cash": 20875050,
+              "cash": 24955830,
               "pik": 4231920,
-              "imputed": 5790895
+              "imputed": 1482381
             },
             "2029": {
-              "cash": 50890240,
+              "cash": 53871960,
               "pik": 4194790,
-              "imputed": 1807889
+              "imputed": 0
             },
             "2030": {
               "cash": 36453340,
@@ -34240,7 +34241,7 @@ const DATA = {
             "2026": {
               "cash": 1024450,
               "pik": 0,
-              "imputed": 517885
+              "imputed": 519306
             },
             "2027": {
               "cash": 347500,
@@ -34282,7 +34283,7 @@ const DATA = {
             "2031": {
               "cash": 0,
               "pik": 3654000,
-              "imputed": 2457600
+              "imputed": 2464341
             }
           }
         },
@@ -34296,17 +34297,17 @@ const DATA = {
             "2027": {
               "cash": 19313250,
               "pik": 2025000,
-              "imputed": 7288054
+              "imputed": 7308046
             },
             "2028": {
-              "cash": 31073170,
+              "cash": 33903550,
               "pik": 3400240,
-              "imputed": 4208992
+              "imputed": 1454056
             },
             "2029": {
-              "cash": 50367670,
+              "cash": 50927730,
               "pik": 2482470,
-              "imputed": 386060
+              "imputed": 0
             },
             "2030": {
               "cash": 91188400,
@@ -34316,7 +34317,7 @@ const DATA = {
             "2031": {
               "cash": 46543590,
               "pik": 0,
-              "imputed": 5696735
+              "imputed": 5712361
             },
             "2032": {
               "cash": 41304920,
@@ -34328,17 +34329,17 @@ const DATA = {
             "2027": {
               "cash": 0,
               "pik": 736000,
-              "imputed": 433140
+              "imputed": 434328
             },
             "2029": {
               "cash": 10202850,
               "pik": 495000,
-              "imputed": 310731
+              "imputed": 311583
             },
             "2031": {
               "cash": 0,
               "pik": 880000,
-              "imputed": 828616
+              "imputed": 830889
             }
           },
           "Equity": {
@@ -34434,9 +34435,9 @@ const DATA = {
               "imputed": 0
             },
             "2031": {
-              "cash": 1932540,
+              "cash": 5442200,
               "pik": 3578890,
-              "imputed": 2834243
+              "imputed": 0
             },
             "2032": {
               "cash": 10055800,
@@ -34448,9 +34449,9 @@ const DATA = {
         "Energy & Materials": {
           "1L": {
             "2026": {
-              "cash": 2727820,
+              "cash": 5399300,
               "pik": 2969990,
-              "imputed": 4943447
+              "imputed": 3040298
             },
             "2027": {
               "cash": 2734420,
@@ -34463,9 +34464,9 @@ const DATA = {
               "imputed": 0
             },
             "2030": {
-              "cash": 36051270,
+              "cash": 37590150,
               "pik": 13326130,
-              "imputed": 1581903
+              "imputed": 0
             },
             "2031": {
               "cash": 9791790,
@@ -34587,12 +34588,12 @@ const DATA = {
             "2033": {
               "cash": 1135440,
               "pik": 0,
-              "imputed": 112993
+              "imputed": 113303
             },
             "2038": {
               "cash": 0,
               "pik": 0,
-              "imputed": 1958547
+              "imputed": 1963919
             },
             "2039": {
               "cash": 298900,
@@ -34694,12 +34695,12 @@ const DATA = {
             "2026": {
               "cash": 0,
               "pik": 613800,
-              "imputed": 621462
+              "imputed": 623167
             },
             "2029": {
               "cash": 25634670,
               "pik": 516000,
-              "imputed": 404892
+              "imputed": 406003
             },
             "2030": {
               "cash": 5151240,
@@ -34714,17 +34715,17 @@ const DATA = {
             "2032": {
               "cash": 0,
               "pik": 2607000,
-              "imputed": 2231613
+              "imputed": 2237735
             },
             "2033": {
-              "cash": 0,
+              "cash": 5152950,
               "pik": 5157900,
-              "imputed": 4660965
+              "imputed": 0
             },
             "2035": {
               "cash": 0,
               "pik": 2058000,
-              "imputed": 1384165
+              "imputed": 1387962
             }
           }
         },
@@ -34733,12 +34734,12 @@ const DATA = {
             "2026": {
               "cash": 1698740,
               "pik": 471000,
-              "imputed": 4284321
+              "imputed": 4296073
             },
             "2027": {
               "cash": 25341330,
               "pik": 2198000,
-              "imputed": 546133
+              "imputed": 547631
             },
             "2028": {
               "cash": 16497530,
@@ -34753,7 +34754,7 @@ const DATA = {
             "2030": {
               "cash": 49307160,
               "pik": 9014540,
-              "imputed": 2212781
+              "imputed": 2218851
             },
             "2031": {
               "cash": 75344560,
@@ -34770,12 +34771,12 @@ const DATA = {
             "2027": {
               "cash": 0,
               "pik": 0,
-              "imputed": 4792790
+              "imputed": 4805937
             },
             "2028": {
               "cash": 16687780,
               "pik": 2204000,
-              "imputed": 7862435
+              "imputed": 7884003
             },
             "2029": {
               "cash": 20446320,
@@ -34841,12 +34842,12 @@ const DATA = {
             "2026": {
               "cash": 0,
               "pik": 0,
-              "imputed": 2231613
+              "imputed": 2237735
             },
             "2027": {
               "cash": 1319020,
               "pik": 0,
-              "imputed": 395476
+              "imputed": 396561
             },
             "2028": {
               "cash": 2399870,
@@ -34873,17 +34874,17 @@ const DATA = {
             "2027": {
               "cash": 0,
               "pik": 198000,
-              "imputed": 169490
+              "imputed": 169955
             },
             "2029": {
               "cash": 0,
               "pik": 3120000,
-              "imputed": 2448183
+              "imputed": 2454899
             },
             "2030": {
               "cash": 0,
               "pik": 6435000,
-              "imputed": 7344550
+              "imputed": 7364697
             }
           }
         },
@@ -34902,7 +34903,7 @@ const DATA = {
             "2028": {
               "cash": 12872460,
               "pik": 0,
-              "imputed": 4585636
+              "imputed": 4598215
             },
             "2029": {
               "cash": 6049240,
@@ -34910,9 +34911,9 @@ const DATA = {
               "imputed": 0
             },
             "2030": {
-              "cash": 17832800,
+              "cash": 19321430,
               "pik": 7558530,
-              "imputed": 1346501
+              "imputed": 0
             },
             "2031": {
               "cash": 26130200,
@@ -34996,7 +34997,7 @@ const DATA = {
             "2026": {
               "cash": 0,
               "pik": 3570000,
-              "imputed": 2401103
+              "imputed": 2407689
             },
             "2028": {
               "cash": 2058500,
@@ -35009,9 +35010,9 @@ const DATA = {
               "imputed": 0
             },
             "2030": {
-              "cash": 6315960,
+              "cash": 13871280,
               "pik": 10000840,
-              "imputed": 6374693
+              "imputed": 0
             },
             "2031": {
               "cash": 19566170,
@@ -35019,21 +35020,21 @@ const DATA = {
               "imputed": 0
             },
             "2032": {
-              "cash": 2267150,
+              "cash": 2769430,
               "pik": 502860,
-              "imputed": 546133
+              "imputed": 0
             }
           },
           "2L": {
             "2026": {
               "cash": 0,
               "pik": 48000,
-              "imputed": 28248
+              "imputed": 28326
             },
             "2030": {
               "cash": 0,
               "pik": 5442750,
-              "imputed": 4999944
+              "imputed": 5013659
             }
           },
           "Equity": {
@@ -35101,22 +35102,22 @@ const DATA = {
             "2026": {
               "cash": 0,
               "pik": 320000,
-              "imputed": 150657
+              "imputed": 151071
             },
             "2027": {
               "cash": 0,
               "pik": 0,
-              "imputed": 696791
+              "imputed": 698702
             },
             "2028": {
               "cash": 0,
               "pik": 280000,
-              "imputed": 5847392
+              "imputed": 5863432
             },
             "2033": {
-              "cash": 0,
+              "cash": 7711560,
               "pik": 7925770,
-              "imputed": 6506518
+              "imputed": 0
             }
           }
         },
@@ -35175,7 +35176,7 @@ const DATA = {
             "2029": {
               "cash": 54195720,
               "pik": 674570,
-              "imputed": 2090372
+              "imputed": 2096106
             },
             "2030": {
               "cash": 45244860,
@@ -35280,22 +35281,22 @@ const DATA = {
             "2029": {
               "cash": 0,
               "pik": 9858000,
-              "imputed": 7005571
+              "imputed": 7024788
             },
             "2030": {
-              "cash": 0,
+              "cash": 781200,
               "pik": 8313900,
-              "imputed": 5715567
+              "imputed": 5070311
             },
             "2031": {
               "cash": 0,
               "pik": 13390000,
-              "imputed": 12608145
+              "imputed": 12642730
             },
             "2033": {
               "cash": 0,
               "pik": 3185000,
-              "imputed": 2306942
+              "imputed": 2313270
             }
           }
         }
@@ -35636,11 +35637,11 @@ const DATA = {
           "2030": 4012000000
         },
         "interest_schedule": {
-          "2026": 710116600,
-          "2027": 644054100,
-          "2028": 572700100,
-          "2029": 502250700,
-          "2030": 352791100
+          "2026": 770376000,
+          "2027": 704313500,
+          "2028": 632959500,
+          "2029": 566282200,
+          "2030": 421626500
         },
         "instruments": [
           {
@@ -35724,49 +35725,49 @@ const DATA = {
             "name": "Revolving Credit Facility",
             "maturity_year": 2030,
             "outstanding": 2028000000,
-            "annual_interest": 121274400,
+            "annual_interest": 107686800,
             "is_clo": false
           },
           {
             "name": "Revolving Funding Facility",
             "maturity_year": 2030,
             "outstanding": 1234000000,
-            "annual_interest": 75644200,
+            "annual_interest": 67376400,
             "is_clo": false
           },
           {
             "name": "SMBC Funding Facility",
             "maturity_year": 2028,
             "outstanding": 563000000,
-            "annual_interest": 34511900,
+            "annual_interest": 30739800,
             "is_clo": false
           },
           {
             "name": "BNP Funding Facility",
             "maturity_year": 2029,
             "outstanding": 717000000,
-            "annual_interest": 44669100,
+            "annual_interest": 39865200,
             "is_clo": false
           },
           {
             "name": "April 2036 CLO Notes",
             "maturity_year": 2036,
             "outstanding": 476000000,
-            "annual_interest": 29464400,
+            "annual_interest": 26275200,
             "is_clo": true
           },
           {
             "name": "October 2036 CLO Secured Loans",
             "maturity_year": 2036,
             "outstanding": 544000000,
-            "annual_interest": 32150400,
+            "annual_interest": 28505600,
             "is_clo": true
           },
           {
             "name": "January 2038 CLO Notes",
             "maturity_year": 2038,
             "outstanding": 700000000,
-            "annual_interest": 40600000,
+            "annual_interest": 35910000,
             "is_clo": true
           }
         ]
@@ -35775,8 +35776,8 @@ const DATA = {
       "cash_on_hand": 638000000,
       "undrawn_revolvers": 5566000000,
       "unfunded_total": 5316000000,
-      "portfolio_avg_rate": 9.42,
-      "rate_coverage_pct": 93.8
+      "portfolio_avg_rate": 9.44,
+      "rate_coverage_pct": 95.8
     },
     "BXSL": {
       "projection_years": [
@@ -35790,9 +35791,9 @@ const DATA = {
         "Business Services": {
           "1L": {
             "2027": {
-              "cash": 12338247,
+              "cash": 12983922,
               "pik": 1150637,
-              "imputed": 601504
+              "imputed": 0
             },
             "2028": {
               "cash": 43962507,
@@ -35925,7 +35926,7 @@ const DATA = {
             "2038": {
               "cash": 0,
               "pik": 0,
-              "imputed": 860860
+              "imputed": 861994
             },
             "2039": {
               "cash": 370656,
@@ -36029,9 +36030,9 @@ const DATA = {
               "imputed": 0
             },
             "2030": {
-              "cash": 9110191,
+              "cash": 10164933,
               "pik": 1097139,
-              "imputed": 911796
+              "imputed": 0
             },
             "2031": {
               "cash": 25940089,
@@ -36093,14 +36094,14 @@ const DATA = {
               "imputed": 0
             },
             "2029": {
-              "cash": 8576709,
+              "cash": 8671919,
               "pik": 111715,
-              "imputed": 62724
+              "imputed": 0
             },
             "2030": {
-              "cash": 19068545,
+              "cash": 19292086,
               "pik": 226895,
-              "imputed": 188713
+              "imputed": 0
             },
             "2031": {
               "cash": 4570208,
@@ -36168,9 +36169,9 @@ const DATA = {
           },
           "2L": {
             "2029": {
-              "cash": 482240,
+              "cash": 4891084,
               "pik": 4715235,
-              "imputed": 3603626
+              "imputed": 0
             },
             "2032": {
               "cash": 6195474,
@@ -36178,9 +36179,9 @@ const DATA = {
               "imputed": 0
             },
             "2033": {
-              "cash": 0,
+              "cash": 2575187,
               "pik": 2565507,
-              "imputed": 1915653
+              "imputed": 0
             }
           },
           "Equity": {
@@ -36345,46 +36346,46 @@ const DATA = {
           "2030": 500000000
         },
         "interest_schedule": {
-          "2026": 399844802,
-          "2027": 351594802,
-          "2028": 255102806,
-          "2029": 172291766,
-          "2030": 58900000
+          "2026": 382338642,
+          "2027": 334088642,
+          "2028": 248707081,
+          "2029": 175174201,
+          "2030": 75852750
         },
         "instruments": [
           {
             "name": "Jackson Hole Funding Facility",
             "maturity_year": 2027,
             "outstanding": 22374000,
-            "annual_interest": 1500177,
+            "annual_interest": 1350271,
             "is_clo": false
           },
           {
             "name": "Breckenridge Funding Facility",
             "maturity_year": 2029,
             "outstanding": 652550000,
-            "annual_interest": 41306415,
+            "annual_interest": 36934330,
             "is_clo": false
           },
           {
             "name": "Big Sky Funding Facility",
             "maturity_year": 2027,
             "outstanding": 585900000,
-            "annual_interest": 35036820,
+            "annual_interest": 31111290,
             "is_clo": false
           },
           {
             "name": "BXSL 2025-1 Facility",
             "maturity_year": 2028,
             "outstanding": 34800000,
-            "annual_interest": 2081040,
+            "annual_interest": 1847880,
             "is_clo": false
           },
           {
             "name": "Revolving Credit Facility",
             "maturity_year": 2029,
             "outstanding": 1447497000,
-            "annual_interest": 72085351,
+            "annual_interest": 62387121,
             "is_clo": false
           },
           {
@@ -36405,49 +36406,49 @@ const DATA = {
             "name": "2027 Notes",
             "maturity_year": 2027,
             "outstanding": 650000000,
-            "annual_interest": 37115000,
+            "annual_interest": 32760000,
             "is_clo": false
           },
           {
             "name": "2028 Notes",
             "maturity_year": 2028,
             "outstanding": 650000000,
-            "annual_interest": 38870000,
+            "annual_interest": 34515000,
             "is_clo": false
           },
           {
             "name": "November 2027 Notes",
             "maturity_year": 2027,
             "outstanding": 400000000,
-            "annual_interest": 22840000,
+            "annual_interest": 20160000,
             "is_clo": false
           },
           {
             "name": "April 2028 Notes",
             "maturity_year": 2028,
             "outstanding": 700000000,
-            "annual_interest": 41860000,
+            "annual_interest": 37170000,
             "is_clo": false
           },
           {
             "name": "June 2030 Notes",
             "maturity_year": 2030,
             "outstanding": 500000000,
-            "annual_interest": 28950000,
+            "annual_interest": 25600000,
             "is_clo": false
           },
           {
             "name": "January 2031 Notes",
             "maturity_year": 2031,
             "outstanding": 500000000,
-            "annual_interest": 29950000,
+            "annual_interest": 26600000,
             "is_clo": false
           },
           {
             "name": "2024-1 Notes",
             "maturity_year": 2037,
             "outstanding": 457500000,
-            "annual_interest": 26718000,
+            "annual_interest": 23652750,
             "is_clo": true
           }
         ]
@@ -36456,8 +36457,8 @@ const DATA = {
       "cash_on_hand": 200199000,
       "undrawn_revolvers": 2288977000,
       "unfunded_total": 1951800000,
-      "portfolio_avg_rate": 9.0,
-      "rate_coverage_pct": 98.0
+      "portfolio_avg_rate": 9.01,
+      "rate_coverage_pct": 99.8
     },
     "FSK": {
       "projection_years": [
@@ -36471,46 +36472,46 @@ const DATA = {
         "Business Services": {
           "1L": {
             "2027": {
-              "cash": 0,
+              "cash": 29594360,
               "pik": 1919800,
-              "imputed": 31897483
+              "imputed": 0
             },
             "2028": {
-              "cash": 0,
+              "cash": 45089400,
               "pik": 19819900,
-              "imputed": 50250901
+              "imputed": 0
             },
             "2029": {
-              "cash": 0,
+              "cash": 21938580,
               "pik": 6307000,
-              "imputed": 24341431
+              "imputed": 0
             },
             "2030": {
-              "cash": 0,
+              "cash": 17232300,
               "pik": 0,
-              "imputed": 20731785
+              "imputed": 0
             },
             "2031": {
-              "cash": 0,
+              "cash": 31414110,
               "pik": 0,
-              "imputed": 36305319
+              "imputed": 0
             },
             "2032": {
-              "cash": 0,
+              "cash": 21765540,
               "pik": 0,
-              "imputed": 27666936
+              "imputed": 0
             }
           },
           "2L": {
             "2034": {
               "cash": 0,
               "pik": 0,
-              "imputed": 873471
+              "imputed": 784192
             },
             "2036": {
               "cash": 0,
               "pik": 0,
-              "imputed": 2525700
+              "imputed": 2267542
             }
           },
           "ABF": {
@@ -36538,70 +36539,70 @@ const DATA = {
             "2029": {
               "cash": 0,
               "pik": 10000,
-              "imputed": 10524
+              "imputed": 9448
             }
           }
         },
         "Consumer": {
           "1L": {
             "2026": {
-              "cash": 1299800,
+              "cash": 1717289,
               "pik": 1062229,
-              "imputed": 1384535
+              "imputed": 954257
             },
             "2027": {
-              "cash": 0,
+              "cash": 10328520,
               "pik": 0,
-              "imputed": 10913128
+              "imputed": 0
             },
             "2028": {
-              "cash": 0,
+              "cash": 40180980,
               "pik": 0,
-              "imputed": 43705129
+              "imputed": 0
             },
             "2029": {
-              "cash": 3420000,
+              "cash": 8589320,
               "pik": 0,
-              "imputed": 6177441
+              "imputed": 0
             },
             "2030": {
-              "cash": 0,
+              "cash": 3663180,
               "pik": 800000,
-              "imputed": 4451546
+              "imputed": 0
             },
             "2031": {
-              "cash": 0,
+              "cash": 9005040,
               "pik": 2223200,
-              "imputed": 10460606
+              "imputed": 0
             },
             "2032": {
-              "cash": 0,
+              "cash": 5216580,
               "pik": 85000,
-              "imputed": 6503677
+              "imputed": 0
             }
           },
           "2L": {
             "2027": {
-              "cash": 0,
+              "cash": 1473200,
               "pik": 0,
-              "imputed": 1525944
+              "imputed": 0
             },
             "2030": {
-              "cash": 0,
+              "cash": 424080,
               "pik": 0,
-              "imputed": 399902
+              "imputed": 0
             },
             "2032": {
-              "cash": 0,
+              "cash": 79740,
               "pik": 46800,
-              "imputed": 94714
+              "imputed": 0
             }
           },
           "ABF": {
             "2029": {
-              "cash": 1598400,
+              "cash": 5490000,
               "pik": 0,
-              "imputed": 4840924
+              "imputed": 0
             },
             "none": {
               "cash": 0,
@@ -36632,16 +36633,16 @@ const DATA = {
         "Energy & Materials": {
           "1L": {
             "2031": {
-              "cash": 0,
+              "cash": 5958080,
               "pik": 0,
-              "imputed": 7240339
+              "imputed": 0
             }
           },
           "ABF": {
             "2028": {
-              "cash": 0,
+              "cash": 5947380,
               "pik": 0,
-              "imputed": 7398195
+              "imputed": 0
             }
           },
           "Equity": {
@@ -36662,36 +36663,36 @@ const DATA = {
         "Financial Services": {
           "1L": {
             "2028": {
-              "cash": 0,
+              "cash": 27973620,
               "pik": 0,
-              "imputed": 35012513
+              "imputed": 0
             },
             "2029": {
-              "cash": 0,
+              "cash": 1276020,
               "pik": 0,
-              "imputed": 1599610
+              "imputed": 0
             },
             "2030": {
-              "cash": 0,
+              "cash": 23985540,
               "pik": 567100,
-              "imputed": 29929542
+              "imputed": 0
             },
             "2031": {
-              "cash": 0,
+              "cash": 2297040,
               "pik": 0,
-              "imputed": 2883507
+              "imputed": 0
             },
             "2032": {
-              "cash": 0,
+              "cash": 8430860,
               "pik": 0,
-              "imputed": 10849985
+              "imputed": 0
             }
           },
           "ABF": {
             "2027": {
               "cash": 0,
               "pik": 0,
-              "imputed": 59659
+              "imputed": 53561
             },
             "2030": {
               "cash": 0,
@@ -36699,9 +36700,9 @@ const DATA = {
               "imputed": 0
             },
             "2032": {
-              "cash": 0,
+              "cash": 25840,
               "pik": 0,
-              "imputed": 42095
+              "imputed": 0
             },
             "2033": {
               "cash": 559000,
@@ -36709,9 +36710,9 @@ const DATA = {
               "imputed": 0
             },
             "2034": {
-              "cash": 0,
+              "cash": 1944000,
               "pik": 3692100,
-              "imputed": 5756491
+              "imputed": 3750892
             },
             "2046": {
               "cash": 4755000,
@@ -36735,7 +36736,7 @@ const DATA = {
             "none": {
               "cash": 0,
               "pik": 0,
-              "imputed": 238615482
+              "imputed": 0
             }
           },
           "Preferred": {
@@ -36747,55 +36748,55 @@ const DATA = {
           },
           "Unsecured": {
             "2030": {
-              "cash": 0,
+              "cash": 443080,
               "pik": 304000,
-              "imputed": 399902
+              "imputed": 0
             }
           }
         },
         "Healthcare": {
           "1L": {
             "2026": {
-              "cash": 0,
+              "cash": 1503220,
               "pik": 0,
-              "imputed": 1652229
+              "imputed": 0
             },
             "2027": {
-              "cash": 0,
+              "cash": 14111220,
               "pik": 4320000,
-              "imputed": 19279508
+              "imputed": 3401313
             },
             "2028": {
-              "cash": 0,
+              "cash": 62290240,
               "pik": 2668300,
-              "imputed": 67288850
+              "imputed": 0
             },
             "2029": {
-              "cash": 0,
+              "cash": 17923600,
               "pik": 0,
-              "imputed": 20837023
+              "imputed": 0
             },
             "2030": {
-              "cash": 0,
+              "cash": 1124720,
               "pik": 0,
-              "imputed": 1283897
+              "imputed": 0
             },
             "2031": {
-              "cash": 0,
+              "cash": 33388660,
               "pik": 4276100,
-              "imputed": 38211732
+              "imputed": 0
             },
             "2032": {
-              "cash": 0,
+              "cash": 12184300,
               "pik": 0,
-              "imputed": 15154198
+              "imputed": 0
             }
           },
           "ABF": {
             "2029": {
-              "cash": 0,
+              "cash": 4153320,
               "pik": 0,
-              "imputed": 4388403
+              "imputed": 0
             }
           },
           "Bond": {
@@ -36807,7 +36808,7 @@ const DATA = {
             "2032": {
               "cash": 0,
               "pik": 2788000,
-              "imputed": 3451790
+              "imputed": 3098974
             }
           },
           "Equity": {
@@ -36833,51 +36834,51 @@ const DATA = {
         "Industrials": {
           "1L": {
             "2026": {
-              "cash": 0,
+              "cash": 12704880,
               "pik": 8247000,
-              "imputed": 12817926
+              "imputed": 0
             },
             "2027": {
-              "cash": 0,
+              "cash": 8473440,
               "pik": 0,
-              "imputed": 8776807
+              "imputed": 0
             },
             "2028": {
-              "cash": 4116000,
+              "cash": 16886520,
               "pik": 4047400,
-              "imputed": 13912396
+              "imputed": 0
             },
             "2029": {
-              "cash": 0,
+              "cash": 14979280,
               "pik": 0,
-              "imputed": 17080044
+              "imputed": 0
             },
             "2030": {
-              "cash": 0,
+              "cash": 832080,
               "pik": 0,
-              "imputed": 1031327
+              "imputed": 0
             },
             "2031": {
-              "cash": 0,
+              "cash": 8711440,
               "pik": 0,
-              "imputed": 10302750
+              "imputed": 0
             },
             "2032": {
-              "cash": 0,
+              "cash": 42593400,
               "pik": 2110000,
-              "imputed": 53513263
+              "imputed": 0
             }
           },
           "2L": {
             "2028": {
-              "cash": 0,
+              "cash": 974820,
               "pik": 0,
-              "imputed": 810329
+              "imputed": 0
             },
             "2029": {
-              "cash": 0,
+              "cash": 35280080,
               "pik": 0,
-              "imputed": 32076387
+              "imputed": 0
             }
           },
           "ABF": {
@@ -36887,14 +36888,14 @@ const DATA = {
               "imputed": 0
             },
             "2028": {
-              "cash": 0,
+              "cash": 2262520,
               "pik": 0,
-              "imputed": 2599366
+              "imputed": 0
             },
             "2029": {
-              "cash": 0,
+              "cash": 3121740,
               "pik": 0,
-              "imputed": 3883263
+              "imputed": 0
             },
             "none": {
               "cash": 0,
@@ -36925,43 +36926,43 @@ const DATA = {
             "2028": {
               "cash": 0,
               "pik": 385110,
-              "imputed": 405280
+              "imputed": 363855
             },
             "2030": {
-              "cash": 0,
+              "cash": 2351680,
               "pik": 99000,
-              "imputed": 2346796
+              "imputed": 0
             },
             "2031": {
-              "cash": 0,
+              "cash": 4114500,
               "pik": 2925000,
-              "imputed": 3420218
+              "imputed": 0
             }
           }
         },
         "Media & Telecom": {
           "1L": {
             "2026": {
-              "cash": 0,
+              "cash": 9913800,
               "pik": 0,
-              "imputed": 9787086
+              "imputed": 0
             },
             "2030": {
-              "cash": 0,
+              "cash": 32665040,
               "pik": 19905000,
-              "imputed": 31508104
+              "imputed": 0
             }
           },
           "ABF": {
             "2026": {
-              "cash": 0,
+              "cash": 4626440,
               "pik": 0,
-              "imputed": 4567307
+              "imputed": 0
             },
             "2028": {
-              "cash": 0,
+              "cash": 1513920,
               "pik": 0,
-              "imputed": 1599610
+              "imputed": 0
             },
             "none": {
               "cash": 0,
@@ -36980,41 +36981,41 @@ const DATA = {
             "2030": {
               "cash": 0,
               "pik": 0,
-              "imputed": 6787818
+              "imputed": 6094019
             }
           }
         },
         "Real Estate & Transportation": {
           "1L": {
             "2026": {
-              "cash": 0,
+              "cash": 9713340,
               "pik": 0,
-              "imputed": 10513225
+              "imputed": 0
             },
             "2028": {
-              "cash": 0,
+              "cash": 9658660,
               "pik": 0,
-              "imputed": 10744748
+              "imputed": 0
             },
             "2029": {
-              "cash": 0,
+              "cash": 1482460,
               "pik": 0,
-              "imputed": 1694324
+              "imputed": 0
             },
             "2030": {
-              "cash": 0,
+              "cash": 2575380,
               "pik": 0,
-              "imputed": 3188696
+              "imputed": 0
             },
             "2031": {
-              "cash": 0,
+              "cash": 1702400,
               "pik": 0,
-              "imputed": 1999512
+              "imputed": 0
             },
             "2032": {
-              "cash": 0,
+              "cash": 2545920,
               "pik": 0,
-              "imputed": 3283410
+              "imputed": 0
             }
           },
           "ABF": {
@@ -37046,12 +37047,12 @@ const DATA = {
             "2034": {
               "cash": 0,
               "pik": 7634000,
-              "imputed": 10955223
+              "imputed": 9835463
             },
             "2035": {
               "cash": 0,
               "pik": 1987500,
-              "imputed": 2788793
+              "imputed": 2503744
             },
             "none": {
               "cash": 0,
@@ -37063,53 +37064,53 @@ const DATA = {
         "Software & Technology": {
           "1L": {
             "2026": {
-              "cash": 0,
+              "cash": 18303880,
               "pik": 5795200,
-              "imputed": 21131688
+              "imputed": 2220302
             },
             "2027": {
-              "cash": 0,
+              "cash": 27725880,
               "pik": 0,
-              "imputed": 29919018
+              "imputed": 0
             },
             "2028": {
-              "cash": 0,
+              "cash": 44718460,
               "pik": 9384000,
-              "imputed": 48577625
+              "imputed": 0
             },
             "2029": {
-              "cash": 0,
+              "cash": 23309220,
               "pik": 0,
-              "imputed": 27435413
+              "imputed": 0
             },
             "2030": {
-              "cash": 0,
+              "cash": 3247480,
               "pik": 655200,
-              "imputed": 3714883
+              "imputed": 0
             },
             "2031": {
-              "cash": 0,
+              "cash": 26570994,
               "pik": 519800,
-              "imputed": 32271810
+              "imputed": 0
             },
             "2032": {
-              "cash": 0,
+              "cash": 57225721,
               "pik": 0,
-              "imputed": 71905717
+              "imputed": 0
             }
           },
           "2L": {
             "2029": {
-              "cash": 0,
+              "cash": 35473320,
               "pik": 0,
-              "imputed": 29487544
+              "imputed": 0
             }
           },
           "Bond": {
             "2029": {
-              "cash": 45500,
+              "cash": 3952720,
               "pik": 0,
-              "imputed": 3651741
+              "imputed": 0
             }
           },
           "Equity": {
@@ -37128,9 +37129,9 @@ const DATA = {
           },
           "Unsecured": {
             "2033": {
-              "cash": 0,
+              "cash": 178560,
               "pik": 120000,
-              "imputed": 168380
+              "imputed": 0
             }
           }
         }
@@ -37364,39 +37365,39 @@ const DATA = {
           "2029": 1000000000
         },
         "interest_schedule": {
-          "2026": 355424300,
-          "2027": 318587050,
-          "2028": 291817050,
-          "2029": 251700050,
-          "2030": 178900050
+          "2026": 381743750,
+          "2027": 345208000,
+          "2028": 318438000,
+          "2029": 280096500,
+          "2030": 207296500
         },
         "instruments": [
           {
             "name": "Callowhill Credit Facility",
             "maturity_year": 2030,
             "outstanding": 284000000,
-            "annual_interest": 17267200,
+            "annual_interest": 15364400,
             "is_clo": false
           },
           {
             "name": "CCT Tokyo Funding Credit Facility",
             "maturity_year": 2026,
             "outstanding": 45000000,
-            "annual_interest": 2837250,
+            "annual_interest": 2535750,
             "is_clo": false
           },
           {
             "name": "Meadowbrook Run Credit Facility",
             "maturity_year": 2028,
             "outstanding": 265000000,
-            "annual_interest": 16642000,
+            "annual_interest": 14866500,
             "is_clo": false
           },
           {
             "name": "Senior Secured Revolving Credit Facility",
             "maturity_year": 2030,
             "outstanding": 1533000000,
-            "annual_interest": 94202850,
+            "annual_interest": 83931750,
             "is_clo": false
           },
           {
@@ -37459,14 +37460,14 @@ const DATA = {
             "name": "CLO-2 Notes",
             "maturity_year": 2037,
             "outstanding": 380000000,
-            "annual_interest": 23351000,
+            "annual_interest": 20805000,
             "is_clo": true
           },
           {
             "name": "CLO-3 Notes",
             "maturity_year": 2038,
             "outstanding": 363000000,
-            "annual_interest": 22197450,
+            "annual_interest": 19765350,
             "is_clo": true
           }
         ]
@@ -37475,8 +37476,8 @@ const DATA = {
       "cash_on_hand": 181000000,
       "undrawn_revolvers": 3268000000,
       "unfunded_total": 1448100000,
-      "portfolio_avg_rate": 10.52,
-      "rate_coverage_pct": 4.6
+      "portfolio_avg_rate": 9.45,
+      "rate_coverage_pct": 96.7
     },
     "GBDC": {
       "projection_years": [
@@ -37500,9 +37501,9 @@ const DATA = {
               "imputed": 0
             },
             "2029": {
-              "cash": 522572,
+              "cash": 943448,
               "pik": 422820,
-              "imputed": 412354
+              "imputed": 0
             },
             "2031": {
               "cash": 582766,
@@ -37583,9 +37584,9 @@ const DATA = {
               "imputed": 0
             },
             "2029": {
-              "cash": 17633362,
+              "cash": 18015441,
               "pik": 383844,
-              "imputed": 374343
+              "imputed": 0
             },
             "2030": {
               "cash": 8258436,
@@ -37595,12 +37596,12 @@ const DATA = {
             "2031": {
               "cash": 13192048,
               "pik": 3145112,
-              "imputed": 287036
+              "imputed": 287966
             },
             "2032": {
               "cash": 707406,
               "pik": 769454,
-              "imputed": 439929
+              "imputed": 441355
             }
           },
           "Unsecured": {
@@ -37634,9 +37635,9 @@ const DATA = {
               "imputed": 0
             },
             "2031": {
-              "cash": 2534,
+              "cash": 509998,
               "pik": 543474,
-              "imputed": 470050
+              "imputed": 0
             },
             "2032": {
               "cash": 2463186,
@@ -37646,14 +37647,14 @@ const DATA = {
           },
           "2L": {
             "2027": {
-              "cash": 0,
+              "cash": 9879,
               "pik": 9900,
-              "imputed": 17987
+              "imputed": 0
             },
             "2029": {
-              "cash": 0,
+              "cash": 1216246,
               "pik": 1217207,
-              "imputed": 815120
+              "imputed": 0
             }
           },
           "Equity": {
@@ -37701,17 +37702,17 @@ const DATA = {
             "2026": {
               "cash": 14558777,
               "pik": 3402298,
-              "imputed": 225777
+              "imputed": 226509
             },
             "2027": {
-              "cash": 13838290,
+              "cash": 14340778,
               "pik": 505735,
-              "imputed": 914900
+              "imputed": 0
             },
             "2028": {
-              "cash": 10013207,
+              "cash": 11215877,
               "pik": 2028045,
-              "imputed": 1056339
+              "imputed": 0
             },
             "2029": {
               "cash": 20058642,
@@ -37724,9 +37725,9 @@ const DATA = {
               "imputed": 0
             },
             "2031": {
-              "cash": 7406879,
+              "cash": 7711540,
               "pik": 309983,
-              "imputed": 282199
+              "imputed": 0
             },
             "2032": {
               "cash": 5439872,
@@ -37736,9 +37737,9 @@ const DATA = {
           },
           "Unsecured": {
             "2033": {
-              "cash": 0,
+              "cash": 356674,
               "pik": 335891,
-              "imputed": 271169
+              "imputed": 0
             }
           }
         },
@@ -37778,9 +37779,9 @@ const DATA = {
           },
           "Unitranche": {
             "2027": {
-              "cash": 1534584,
+              "cash": 1772291,
               "pik": 238217,
-              "imputed": 432802
+              "imputed": 0
             },
             "2028": {
               "cash": 15494420,
@@ -37790,7 +37791,7 @@ const DATA = {
             "2029": {
               "cash": 1510480,
               "pik": 3295900,
-              "imputed": 941966
+              "imputed": 945020
             },
             "2032": {
               "cash": 2208746,
@@ -37882,9 +37883,9 @@ const DATA = {
           },
           "Unsecured": {
             "2032": {
-              "cash": 0,
+              "cash": 265615,
               "pik": 229622,
-              "imputed": 193280
+              "imputed": 0
             }
           }
         },
@@ -37959,14 +37960,14 @@ const DATA = {
           },
           "Unitranche": {
             "2026": {
-              "cash": 6725092,
+              "cash": 10597486,
               "pik": 3932530,
-              "imputed": 2917871
+              "imputed": 0
             },
             "2027": {
-              "cash": 31788925,
+              "cash": 32386795,
               "pik": 3578254,
-              "imputed": 2007214
+              "imputed": 1500183
             },
             "2028": {
               "cash": 19266400,
@@ -37974,14 +37975,14 @@ const DATA = {
               "imputed": 0
             },
             "2029": {
-              "cash": 23918069,
+              "cash": 24259347,
               "pik": 486734,
-              "imputed": 344307
+              "imputed": 0
             },
             "2030": {
               "cash": 2860633,
               "pik": 2737230,
-              "imputed": 1148737
+              "imputed": 1152461
             },
             "2031": {
               "cash": 5947745,
@@ -37996,19 +37997,19 @@ const DATA = {
           },
           "Unsecured": {
             "2026": {
-              "cash": 0,
+              "cash": 825474,
               "pik": 835143,
-              "imputed": 512727
+              "imputed": 0
             },
             "2028": {
               "cash": 0,
               "pik": 3326950,
-              "imputed": 2052946
+              "imputed": 2059602
             },
             "2031": {
               "cash": 0,
               "pik": 362595,
-              "imputed": 267521
+              "imputed": 268388
             }
           }
         },
@@ -38034,7 +38035,7 @@ const DATA = {
             "2029": {
               "cash": 0,
               "pik": 1556360,
-              "imputed": 1015782
+              "imputed": 1019076
             }
           },
           "Equity": {
@@ -38317,17 +38318,17 @@ const DATA = {
             "2027": {
               "cash": 27624011,
               "pik": 963805,
-              "imputed": 155608
+              "imputed": 156113
             },
             "2028": {
-              "cash": 64990298,
+              "cash": 65001214,
               "pik": 5257930,
-              "imputed": 9842
+              "imputed": 0
             },
             "2029": {
-              "cash": 36614565,
+              "cash": 39964359,
               "pik": 5571703,
-              "imputed": 2793911
+              "imputed": 0
             },
             "2030": {
               "cash": 19592306,
@@ -38335,9 +38336,9 @@ const DATA = {
               "imputed": 0
             },
             "2031": {
-              "cash": 59452793,
+              "cash": 60150207,
               "pik": 4609623,
-              "imputed": 592992
+              "imputed": 0
             },
             "2032": {
               "cash": 6865096,
@@ -38345,9 +38346,9 @@ const DATA = {
               "imputed": 0
             },
             "2034": {
-              "cash": 0,
+              "cash": 57017,
               "pik": 57054,
-              "imputed": 31393
+              "imputed": 0
             },
             "none": {
               "cash": 0,
@@ -38359,7 +38360,7 @@ const DATA = {
             "2032": {
               "cash": 0,
               "pik": 26936,
-              "imputed": 22060
+              "imputed": 22132
             }
           }
         }
@@ -38643,25 +38644,25 @@ const DATA = {
           "2029": 755415000
         },
         "interest_schedule": {
-          "2026": 184891443,
-          "2027": 169899993,
-          "2028": 162741865,
-          "2029": 112045315,
-          "2030": 66720415
+          "2026": 248616879,
+          "2027": 233625429,
+          "2028": 226467301,
+          "2029": 175770751,
+          "2030": 130445851
         },
         "instruments": [
           {
             "name": "2024 Debt Securitization",
             "maturity_year": 2036,
             "outstanding": 1364000000,
-            "annual_interest": 80339600,
+            "annual_interest": 71200800,
             "is_clo": true
           },
           {
             "name": "JPM Credit Facility",
             "maturity_year": 2030,
             "outstanding": 1115726000,
-            "annual_interest": 66720415,
+            "annual_interest": 59245051,
             "is_clo": false
           },
           {
@@ -38698,8 +38699,8 @@ const DATA = {
       "cash_on_hand": 93969000,
       "undrawn_revolvers": 881774000,
       "unfunded_total": 815900000,
-      "portfolio_avg_rate": 8.48,
-      "rate_coverage_pct": 94.9
+      "portfolio_avg_rate": 8.51,
+      "rate_coverage_pct": 98.4
     },
     "OBDC": {
       "projection_years": [
@@ -38713,9 +38714,9 @@ const DATA = {
         "Business Services": {
           "1L": {
             "2026": {
-              "cash": 0,
+              "cash": 1684912,
               "pik": 1063261,
-              "imputed": 1634980
+              "imputed": 0
             },
             "2027": {
               "cash": 3318235,
@@ -38728,9 +38729,9 @@ const DATA = {
               "imputed": 0
             },
             "2029": {
-              "cash": 10826557,
+              "cash": 13796121,
               "pik": 2343480,
-              "imputed": 2561388
+              "imputed": 0
             },
             "2030": {
               "cash": 15358377,
@@ -38802,7 +38803,7 @@ const DATA = {
             "2029": {
               "cash": 0,
               "pik": 30317,
-              "imputed": 607980
+              "imputed": 618702
             }
           }
         },
@@ -38814,29 +38815,29 @@ const DATA = {
               "imputed": 0
             },
             "2027": {
-              "cash": 24433133,
+              "cash": 24483413,
               "pik": 32603,
-              "imputed": 46494
+              "imputed": 0
             },
             "2028": {
-              "cash": 23470255,
+              "cash": 31878204,
               "pik": 12759128,
-              "imputed": 7774746
+              "imputed": 0
             },
             "2029": {
-              "cash": 22614324,
+              "cash": 25976665,
               "pik": 2110840,
-              "imputed": 3291522
+              "imputed": 0
             },
             "2030": {
-              "cash": 54211326,
+              "cash": 69319949,
               "pik": 9687468,
-              "imputed": 14257968
+              "imputed": 0
             },
             "2031": {
-              "cash": 25282161,
+              "cash": 27895312,
               "pik": 1857690,
-              "imputed": 1986907
+              "imputed": 0
             },
             "2032": {
               "cash": 15397472,
@@ -38867,9 +38868,9 @@ const DATA = {
           },
           "Revolver": {
             "2027": {
-              "cash": 0,
+              "cash": 1444382,
               "pik": 910938,
-              "imputed": 1402993
+              "imputed": 0
             },
             "2028": {
               "cash": 1348303,
@@ -38884,9 +38885,9 @@ const DATA = {
           },
           "Unsecured": {
             "2032": {
-              "cash": 0,
+              "cash": 1278599,
               "pik": 953848,
-              "imputed": 854117
+              "imputed": 0
             }
           }
         },
@@ -38973,9 +38974,9 @@ const DATA = {
               "imputed": 0
             },
             "2030": {
-              "cash": 29878120,
+              "cash": 39601871,
               "pik": 7228034,
-              "imputed": 6563888
+              "imputed": 0
             },
             "2031": {
               "cash": 16653225,
@@ -39042,19 +39043,19 @@ const DATA = {
           },
           "Unsecured": {
             "2027": {
-              "cash": 0,
+              "cash": 7870020,
               "pik": 5423018,
-              "imputed": 6435766
+              "imputed": 0
             },
             "2029": {
-              "cash": 0,
+              "cash": 5276877,
               "pik": 3328000,
-              "imputed": 5125664
+              "imputed": 0
             },
             "2030": {
               "cash": 0,
               "pik": 18875640,
-              "imputed": 15141445
+              "imputed": 15408484
             },
             "2034": {
               "cash": 113300,
@@ -39066,9 +39067,9 @@ const DATA = {
         "Healthcare": {
           "1L": {
             "2026": {
-              "cash": 4369475,
+              "cash": 24282340,
               "pik": 15853354,
-              "imputed": 14032334
+              "imputed": 0
             },
             "2027": {
               "cash": 15762070,
@@ -39076,9 +39077,9 @@ const DATA = {
               "imputed": 0
             },
             "2028": {
-              "cash": 19797678,
+              "cash": 37173089,
               "pik": 14562490,
-              "imputed": 12709430
+              "imputed": 0
             },
             "2029": {
               "cash": 28779898,
@@ -39110,9 +39111,9 @@ const DATA = {
           },
           "DDTL": {
             "2026": {
-              "cash": 0,
+              "cash": 4493477,
               "pik": 3408360,
-              "imputed": 2853923
+              "imputed": 0
             },
             "2029": {
               "cash": 1825080,
@@ -39146,9 +39147,9 @@ const DATA = {
           },
           "Revolver": {
             "2026": {
-              "cash": 1818887,
+              "cash": 1920926,
               "pik": 72540,
-              "imputed": 77586
+              "imputed": 0
             },
             "2028": {
               "cash": 16027,
@@ -39264,9 +39265,9 @@ const DATA = {
               "imputed": 0
             },
             "2029": {
-              "cash": 3638263,
+              "cash": 7475602,
               "pik": 2383440,
-              "imputed": 3823841
+              "imputed": 0
             },
             "2031": {
               "cash": 14532285,
@@ -39325,7 +39326,7 @@ const DATA = {
             "2030": {
               "cash": 0,
               "pik": 28908690,
-              "imputed": 19528119
+              "imputed": 19872524
             }
           }
         },
@@ -39369,16 +39370,16 @@ const DATA = {
           },
           "2L": {
             "2033": {
-              "cash": 0,
+              "cash": 7699226,
               "pik": 5381860,
-              "imputed": 6094812
+              "imputed": 0
             }
           },
           "Bond": {
             "2030": {
               "cash": 0,
               "pik": 258170,
-              "imputed": 451845
+              "imputed": 459814
             }
           },
           "DDTL": {
@@ -39436,9 +39437,9 @@ const DATA = {
           },
           "Unsecured": {
             "2034": {
-              "cash": 0,
+              "cash": 3296045,
               "pik": 2513208,
-              "imputed": 2058910
+              "imputed": 0
             }
           }
         }
@@ -39698,102 +39699,102 @@ const DATA = {
           "2030": 500000000
         },
         "interest_schedule": {
-          "2026": 359024810,
-          "2027": 275874810,
-          "2028": 244781060,
-          "2029": 217218560,
-          "2030": 95935960
+          "2026": 485610411,
+          "2027": 405810411,
+          "2028": 374716661,
+          "2029": 347154161,
+          "2030": 218162608
         },
         "instruments": [
           {
             "name": "Revolving Credit Facility",
             "maturity_year": 2029,
             "outstanding": 1012000000,
-            "annual_interest": 61782600,
+            "annual_interest": 55002200,
             "is_clo": false
           },
           {
             "name": "SPV Asset Facility II",
             "maturity_year": 2036,
             "outstanding": 161700000,
-            "annual_interest": 10154760,
+            "annual_interest": 9071370,
             "is_clo": false
           },
           {
             "name": "SPV Asset Facility V",
             "maturity_year": null,
             "outstanding": 384000000,
-            "annual_interest": 23923200,
+            "annual_interest": 21350400,
             "is_clo": false
           },
           {
             "name": "SPV Asset Facility VI",
             "maturity_year": null,
             "outstanding": 300000000,
-            "annual_interest": 18090000,
+            "annual_interest": 16080000,
             "is_clo": false
           },
           {
             "name": "SPV Asset Facility VII",
             "maturity_year": null,
             "outstanding": 210000000,
-            "annual_interest": 12768000,
+            "annual_interest": 11361000,
             "is_clo": false
           },
           {
             "name": "CLO I",
             "maturity_year": 2036,
             "outstanding": 390000000,
-            "annual_interest": 23907000,
+            "annual_interest": 21294000,
             "is_clo": true
           },
           {
             "name": "CLO III",
             "maturity_year": 2036,
             "outstanding": 260000000,
-            "annual_interest": 15938000,
+            "annual_interest": 14196000,
             "is_clo": true
           },
           {
             "name": "CLO IV",
             "maturity_year": 2029,
             "outstanding": 275463000,
-            "annual_interest": 16334956,
+            "annual_interest": 14489354,
             "is_clo": true
           },
           {
             "name": "CLO V",
             "maturity_year": 2034,
             "outstanding": 509625000,
-            "annual_interest": 29456325,
+            "annual_interest": 26041838,
             "is_clo": true
           },
           {
             "name": "CLO VII",
             "maturity_year": 2038,
             "outstanding": 330500000,
-            "annual_interest": 21251150,
+            "annual_interest": 19036800,
             "is_clo": true
           },
           {
             "name": "CLO X",
             "maturity_year": 2037,
             "outstanding": 272000000,
-            "annual_interest": 26737600,
+            "annual_interest": 24915200,
             "is_clo": true
           },
           {
             "name": "CLO XIV",
             "maturity_year": 2035,
             "outstanding": 260000000,
-            "annual_interest": 25558000,
+            "annual_interest": 23816000,
             "is_clo": true
           },
           {
             "name": "2026 Notes",
             "maturity_year": 2026,
             "outstanding": 500000000,
-            "annual_interest": 49150000,
+            "annual_interest": 45800000,
             "is_clo": false
           },
           {
@@ -39858,8 +39859,8 @@ const DATA = {
       "cash_on_hand": 521094000,
       "undrawn_revolvers": 3258164000,
       "unfunded_total": 1674958000,
-      "portfolio_avg_rate": 9.63,
-      "rate_coverage_pct": 90.7
+      "portfolio_avg_rate": 9.8,
+      "rate_coverage_pct": 98.3
     }
   },
   "positions": {
@@ -133679,7 +133680,7 @@ function refreshAll() {
 let liqDrawRate = 15;
 const liqRevolverRisk = 0; // hardcoded — slider removed
 let liqForcedSale = 0;
-let liqDividendRate = 5;
+let liqDividendRate = 10;
 let liqProjectionChart = null;
 let _maturityInstruments = {};
 let _lastLiqResults = {};
@@ -133712,10 +133713,10 @@ function showLiqModal(title, bodyHtml) {
 
 function applyLiqPreset(name) {
   const presets = {
-    base: {draw: 15, sale: 0},
-    moderate: {draw: 30, sale: 5},
-    severe: {draw: 50, sale: 15},
-    crisis: {draw: 75, sale: 25},
+    base: {draw: 100, sale: 0},
+    moderate: {draw: 100, sale: 5},
+    severe: {draw: 100, sale: 15},
+    crisis: {draw: 100, sale: 25},
   };
   const p = presets[name];
   if (!p) return;
@@ -134205,6 +134206,15 @@ function renderLiquidityProjection(ticker) {
 
   const labels = projection.cumulative.map(c => String(c.year));
   const cf = DATA.cash_flow_data[ticker];
+
+  // SOFR note
+  const sofrNote = document.getElementById('liqSofrNote');
+  if (sofrNote) {
+    const rc = DATA.rates_curve || {};
+    sofrNote.textContent = rc.sofr
+      ? 'Floating-rate debt interest uses SOFR ' + rc.sofr.toFixed(2) + '% (as of ' + (rc.sofr_date || 'unknown') + ') from FRED.'
+      : '';
+  }
 
   // Rate coverage warning
   const coverageEl = document.getElementById('liqProjectionRateCoverage');
@@ -135589,7 +135599,7 @@ setTimeout(() => {
 (function() {
   const el = document.createElement('div');
   el.style.cssText = 'position:fixed;bottom:8px;right:12px;font-size:10px;color:#999;z-index:1000;pointer-events:none';
-  const deployTs = 'Apr 15, 2026 5:28 PM ';
+  const deployTs = 'Apr 15, 2026 5:51 PM ';
   if (deployTs.startsWith('__')) {
     el.textContent = 'Local dev';
   } else {
