@@ -1231,7 +1231,20 @@
     </div>
 
     <div style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:24px">
-      <h3 style="font-size:14px;font-weight:600;margin-bottom:4px">Net Liquidity Position</h3>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <h3 style="font-size:14px;font-weight:600;margin:0">Net Liquidity Position</h3>
+        <div style="position:relative">
+          <button id="liqGearBtn" onclick="document.getElementById('liqAdvMenu').style.display=document.getElementById('liqAdvMenu').style.display==='none'?'block':'none'" style="background:none;border:1px solid #ccc;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:13px;color:#888" title="Advanced settings">&#9881;</button>
+          <div id="liqAdvMenu" style="display:none;position:absolute;right:0;top:28px;background:#fff;border:1px solid #ddd;border-radius:6px;padding:12px 16px;box-shadow:0 4px 12px rgba(0,0,0,0.12);z-index:100;min-width:240px">
+            <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:8px;border-bottom:1px solid #eee;padding-bottom:6px">Advanced Settings</div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#666;cursor:pointer">
+              <input type="checkbox" id="liqIncludeRestricted" onchange="renderLiquidityTab()">
+              Include restricted cash in available liquidity
+            </label>
+            <p style="font-size:10px;color:#aaa;margin:4px 0 0 24px">Restricted cash is held as collateral or for specific obligations and is typically not available for general use.</p>
+          </div>
+        </div>
+      </div>
       <p style="font-size:11px;color:#888;margin-bottom:12px"><em>Cash + undrawn revolver capacity (adjusted for renewal risk and borrowing base shrinkage) − stressed unfunded draws − near-term debt maturities (2yr).</em></p>
       <div id="liqWaterfallTable"></div>
     </div>
@@ -33279,6 +33292,11 @@ const DATA = {
     "ARCC": {
       "cash": 638000000,
       "restricted_cash": 286000000,
+      "cash_detail": {
+        "cash_and_cash_equivalents": 638000000,
+        "foreign_currencies": 26000000,
+        "restricted_cash": 286000000
+      },
       "debt_instruments": [
         {
           "name": "January 2026 Notes",
@@ -33500,6 +33518,10 @@ const DATA = {
     "BXSL": {
       "cash": 200199000,
       "restricted_cash": 89406000,
+      "cash_detail": {
+        "cash_and_cash_equivalents": 289605000,
+        "restricted_cash_and_equivalents": 89406000
+      },
       "debt_instruments": [
         {
           "name": "Jackson Hole Funding Facility",
@@ -33673,6 +33695,10 @@ const DATA = {
     "FSK": {
       "cash": 208000000,
       "restricted_cash": 0,
+      "cash_detail": {
+        "cash": 181000000,
+        "foreign_currencies": 27000000
+      },
       "debt_instruments": [
         {
           "name": "Callowhill Credit Facility",
@@ -33854,6 +33880,13 @@ const DATA = {
     "GBDC": {
       "cash": 93969000,
       "restricted_cash": 66573000,
+      "cash_detail": {
+        "cash": 58445000,
+        "cash_equivalents": 25865000,
+        "foreign_currencies": 9659000,
+        "restricted_cash": 32148000,
+        "restricted_cash_equivalents": 34425000
+      },
       "debt_instruments": [
         {
           "name": "2024 Debt Securitization",
@@ -33950,6 +33983,11 @@ const DATA = {
     "OBDC": {
       "cash": 521094000,
       "restricted_cash": 47448000,
+      "cash_detail": {
+        "cash": 558703000,
+        "foreign_currencies": 9839000,
+        "restricted_cash_and_equivalents": 47448000
+      },
       "debt_instruments": [
         {
           "name": "Revolving Credit Facility",
@@ -133826,11 +133864,15 @@ function renderLiquidityTab() {
     const revolverAdj = liq.total_undrawn_revolver * (1 - liqRevolverRisk / 100) * (1 - bbShrinkage);
 
     // Net liquidity
-    const grossLiq = liq.cash + revolverAdj;
+    const includeRestricted = document.getElementById('liqIncludeRestricted') && document.getElementById('liqIncludeRestricted').checked;
+    const availCash = liq.cash + (includeRestricted ? (liq.restricted_cash || 0) : 0);
+    const grossLiq = availCash + revolverAdj;
     const netLiq = grossLiq - stressedDraw - liq.near_term_maturities_2yr;
 
     liqResults[t] = {
-      cash: liq.cash,
+      cash: availCash,
+      restrictedCash: liq.restricted_cash || 0,
+      includeRestricted,
       revolverAdj,
       grossLiq,
       stressedDraw,
@@ -134080,24 +134122,62 @@ function renderCoverageChart(tickers, liqResults) {
 function buildLiqDetail(ticker, column) {
   const liq = DATA.liquidity[ticker];
   if (!liq) return '';
+  const includeRestricted = document.getElementById('liqIncludeRestricted') && document.getElementById('liqIncludeRestricted').checked;
   const drow = (label, val, op, color) => {
-    const sign = op === '-' ? '−' : op === '+' ? '+' : '';
+    const sign = op === '-' ? '&minus;' : op === '+' ? '+' : '';
     const c = color || (op === '-' ? '#c0392b' : '#555');
     return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #f0f0ec"><span style="color:#777">' + sign + ' ' + label + '</span><span style="color:' + c + ';font-weight:500">' + fmtDollar(val) + '</span></div>';
   };
+  const dimrow = (label, val) => '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #f0f0ec"><span style="color:#bbb;font-style:italic">' + label + '</span><span style="color:#bbb;font-weight:500">' + fmtDollar(val) + '</span></div>';
   const total = (label, val, color) => '<div style="display:flex;justify-content:space-between;padding:5px 0;border-top:2px solid #ccc;font-weight:700"><span style="color:#333">' + label + '</span><span style="color:' + (color || '#333') + '">' + fmtDollar(val) + '</span></div>';
+
+  const LABELS = {
+    cash: 'Cash', cash_and_cash_equivalents: 'Cash & equivalents',
+    cash_equivalents: 'Cash equivalents', foreign_currencies: 'Foreign currencies',
+    restricted_cash: 'Restricted cash', restricted_cash_equivalents: 'Restricted cash equivalents',
+    restricted_cash_and_equivalents: 'Restricted cash & equivalents',
+  };
 
   if (column === 'cash') {
     let h = '';
-    // Show XBRL detail fields if available
-    const a = liq;
-    const xKeys = Object.keys(DATA.liquidity[ticker] || {});
-    // We have cash (unrestricted) and restricted_cash in the liquidity data
-    // For the XBRL breakdown, check the balance sheet
-    const bs = DATA.portfolios[ticker] || {};
-    h += drow('Unrestricted cash & equivalents', liq.cash, '+');
-    if (liq.restricted_cash > 0) h += drow('Restricted cash (not available)', liq.restricted_cash, '', '#999');
-    h += total('Available cash', liq.cash);
+    const cd = liq.cash_detail || {};
+    // Unrestricted components
+    const unrestrictedKeys = ['cash', 'cash_and_cash_equivalents', 'cash_equivalents', 'foreign_currencies'];
+    const restrictedKeys = ['restricted_cash', 'restricted_cash_equivalents', 'restricted_cash_and_equivalents'];
+    let hasDetail = Object.keys(cd).length > 0;
+    if (hasDetail) {
+      for (const k of unrestrictedKeys) {
+        if (cd[k]) h += drow(LABELS[k] || k, cd[k], '+');
+      }
+      h += total('Unrestricted cash', liq.cash - (includeRestricted ? (liq.restricted_cash || 0) : 0));
+      // Restricted
+      let hasRestricted = false;
+      for (const k of restrictedKeys) {
+        if (cd[k]) { hasRestricted = true; break; }
+      }
+      if (hasRestricted) {
+        for (const k of restrictedKeys) {
+          if (cd[k]) {
+            if (includeRestricted) h += drow(LABELS[k] || k, cd[k], '+', '#996633');
+            else h += dimrow(LABELS[k] || k + ' (excluded)', cd[k]);
+          }
+        }
+      }
+      if (includeRestricted && liq.restricted_cash > 0) {
+        h += total('Available cash (incl. restricted)', liq.cash, '#333');
+      } else {
+        h += total('Available cash', liq.cash - (includeRestricted ? 0 : 0));
+      }
+    } else {
+      h += drow('Unrestricted cash & equivalents', liq.cash, '+');
+      if (liq.restricted_cash > 0) {
+        if (includeRestricted) h += drow('Restricted cash', liq.restricted_cash, '+', '#996633');
+        else h += dimrow('Restricted cash (excluded)', liq.restricted_cash);
+      }
+      const avail = liq.cash + (includeRestricted ? (liq.restricted_cash || 0) : 0);
+      h += total('Available cash', avail);
+    }
+    h += '<div style="font-size:10px;color:#aaa;padding-top:4px">Source: SEC EDGAR XBRL</div>';
     return h;
   }
 
@@ -134107,10 +134187,16 @@ function buildLiqDetail(ticker, column) {
       if (inst.type !== 'revolving_credit' && inst.type !== 'secured_credit_facility') continue;
       const u = inst.undrawn || 0;
       sum += u;
-      const detail = inst.total_commitment
-        ? ' (' + fmtDollar(inst.total_commitment) + ' commit. − ' + fmtDollar(inst.outstanding) + ' drawn)'
-        : '';
-      h += drow(inst.name + detail, u, '+');
+      let detail = '';
+      if (inst.total_commitment) {
+        detail = '<div style="font-size:10px;color:#aaa;padding-left:16px;margin-top:-1px">'
+          + fmtDollar(inst.total_commitment) + ' commitment &minus; ' + fmtDollar(inst.outstanding) + ' drawn = ' + fmtDollar(u) + ' available'
+          + (inst.interest_rate ? ' | ' + inst.interest_rate : '')
+          + (inst.maturity_date ? ' | mat. ' + inst.maturity_date : '')
+          + '</div>';
+      }
+      h += drow(inst.name, u, '+');
+      if (detail) h += detail;
     }
     h += total('Total undrawn capacity', sum, '#2c6fbb');
     return h;
@@ -134122,6 +134208,7 @@ function buildLiqDetail(ticker, column) {
       h += drow(d.section, d.amount, '+');
     }
     h += total('Total unfunded commitments', liq.unfunded_total);
+    h += '<div style="font-size:10px;color:#aaa;padding-top:4px">Source: Schedule of Investments netting lines</div>';
     return h;
   }
 
@@ -134131,9 +134218,10 @@ function buildLiqDetail(ticker, column) {
       if (inst.type === 'clo' || inst.type === 'revolving_credit' || inst.type === 'secured_credit_facility') continue;
       if (!inst.maturity_year || inst.maturity_year > 2027) continue;
       const matLabel = inst.maturity_date || String(inst.maturity_year);
-      h += drow(inst.name + ' (due ' + matLabel + ')', inst.outstanding, '+');
+      h += drow(inst.name, inst.outstanding, '+');
+      h += '<div style="font-size:10px;color:#aaa;padding-left:16px;margin-top:-1px">Due ' + matLabel + ' | ' + (inst.interest_rate || '') + '</div>';
     }
-    h += total('Total near-term maturities', liq.near_term_maturities_2yr);
+    h += total('Total near-term maturities (\u22642027)', liq.near_term_maturities_2yr);
     return h;
   }
   return '';
@@ -135711,7 +135799,7 @@ setTimeout(() => {
 (function() {
   const el = document.createElement('div');
   el.style.cssText = 'position:fixed;bottom:8px;right:12px;font-size:10px;color:#999;z-index:1000;pointer-events:none';
-  const deployTs = 'Apr 15, 2026 8:53 PM ';
+  const deployTs = 'Apr 15, 2026 9:04 PM ';
   if (deployTs.startsWith('__')) {
     el.textContent = 'Local dev';
   } else {
