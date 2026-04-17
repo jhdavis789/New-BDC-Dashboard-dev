@@ -160127,7 +160127,14 @@ const liqExcludedKeys = new Set(['jvInflow']);
 // Line-item exclusions keyed 'parentCategory:lineLabel' (e.g.
 // 'cashOnHand:restricted_cash', 'debtRepayment:2026 Notes'). Excluded lines
 // subtract from their parent totals in the projection.
-const liqExcludedLines = new Set();
+// Default-OFF: restricted cash and equivalents. Not freely usable for debt
+// service or investments — conservative to exclude. User can opt in by
+// clicking the line row.
+const liqExcludedLines = new Set([
+  'cashOnHand:restricted_cash',
+  'cashOnHand:restricted_cash_equivalents',
+  'cashOnHand:restricted_cash_and_equivalents',
+]);
 function isLineExcluded(parent, line) {
   return liqExcludedLines.has(parent + ':' + line);
 }
@@ -163569,7 +163576,7 @@ setTimeout(() => {
 (function() {
   const el = document.createElement('div');
   el.style.cssText = 'position:fixed;bottom:8px;right:12px;font-size:10px;color:#999;z-index:1000;pointer-events:none';
-  const deployTs = 'Apr 16, 2026 5:23 PM ';
+  const deployTs = 'Apr 16, 2026 5:27 PM ';
   if (deployTs.startsWith('__')) {
     el.textContent = 'Local dev';
   } else {
